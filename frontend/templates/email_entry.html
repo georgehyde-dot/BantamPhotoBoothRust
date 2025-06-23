@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Email</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Get Your Photo!</h1>
+        <p>Enter your email address to receive your photo:</p>
+        
+        <form id="emailForm">
+            <input type="email" id="emailInput" placeholder="your@email.com" required>
+            <button type="submit" class="action-button">Send Photo</button>
+        </form>
+        
+        <div id="message" style="display: none; margin-top: 20px;"></div>
+    </div>
+    
+    <script>
+        document.getElementById('emailForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('emailInput').value;
+            const messageDiv = document.getElementById('message');
+            
+            try {
+                const response = await fetch('/api/session/submit_email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: email })
+                });
+                
+                if (response.ok) {
+                    messageDiv.innerHTML = '<p style="color: green;">Photo sent! Check your email.</p>';
+                    messageDiv.style.display = 'block';
+                    
+                    // Redirect to start after a delay
+                    setTimeout(() => {
+                        window.location.href = '/start';
+                    }, 3000);
+                } else {
+                    messageDiv.innerHTML = '<p style="color: red;">Failed to send photo. Please try again.</p>';
+                    messageDiv.style.display = 'block';
+                }
+            } catch (error) {
+                messageDiv.innerHTML = '<p style="color: red;">Network error. Please try again.</p>';
+                messageDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

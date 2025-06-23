@@ -1,0 +1,379 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    height: 100%;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+body {
+    height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #333;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+}
+
+/* Container styles - fullscreen */
+.container {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    text-align: center;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Typography - responsive */
+h1 {
+    font-size: clamp(1.2rem, 6vw, 2.5rem);
+    margin-bottom: 0.5rem;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+h2 {
+    font-size: clamp(1rem, 5vw, 1.8rem);
+    margin-bottom: 0.5rem;
+    color: white;
+}
+
+p {
+    font-size: clamp(0.9rem, 4vw, 1.1rem);
+    margin-bottom: 0.5rem;
+    color: white;
+}
+
+/* Button styles - very touch-friendly */
+.action-button, .choice-button, .start-countdown-btn {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: clamp(1rem, 5vw, 1.3rem);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    
+    /* Very touch-friendly sizing */
+    min-height: 60px;
+    min-width: 150px;
+    padding: 1rem 1.5rem;
+    margin: 0.3rem;
+    
+    /* Prevent zoom and ensure good touch response */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+}
+
+.action-button:active, .choice-button:active, .start-countdown-btn:active {
+    background: #45a049;
+    transform: scale(0.98);
+}
+
+.action-button:disabled, .start-countdown-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Special button colors */
+.retake-btn {
+    background: #ff9800;
+}
+
+.retake-btn:active {
+    background: #f57c00;
+}
+
+.accept-btn {
+    background: #4CAF50;
+}
+
+.accept-btn:active {
+    background: #45a049;
+}
+
+/* Choice grid - stack vertically on small screens */
+.choice-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    width: 100%;
+    max-width: 400px;
+    margin: 1rem 0;
+}
+
+.choice-button {
+    min-height: 70px;
+    width: 100%;
+}
+
+/* Form styles - touch-friendly */
+form {
+    width: 100%;
+    max-width: 350px;
+    margin: 1rem 0;
+}
+
+input[type="text"], input[type="email"] {
+    width: 100%;
+    padding: 1rem;
+    font-size: clamp(1rem, 5vw, 1.2rem);
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    background: white;
+    
+    /* Touch-friendly */
+    min-height: 60px;
+    touch-action: manipulation;
+}
+
+input[type="text"]:focus, input[type="email"]:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+/* Countdown specific styles - fullscreen */
+.countdown-container {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    text-align: center;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+.countdown-message {
+    font-size: clamp(1rem, 5vw, 1.4rem);
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    margin-bottom: 0.5rem;
+    flex-shrink: 0;
+}
+
+.camera-preview {
+    width: 90vw;
+    height: 40vh;
+    max-width: 500px;
+    background: #000;
+    border: 3px solid #333;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.preview-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: #666;
+    font-size: clamp(0.9rem, 4vw, 1.2rem);
+    flex-direction: column;
+    padding: 1rem;
+}
+
+.countdown-display {
+    font-size: clamp(3rem, 15vw, 6rem);
+    font-weight: bold;
+    color: #ff4444;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    margin: 1rem 0;
+    min-height: clamp(80px, 20vw, 120px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.countdown-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Photo preview styles */
+.photo-container {
+    width: 90vw;
+    max-width: 500px;
+    margin: 1rem 0;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.photo-preview {
+    width: 100%;
+    height: auto;
+    max-height: 50vh;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    object-fit: contain;
+}
+
+.photo-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 350px;
+    margin: 1rem 0;
+    flex-shrink: 0;
+}
+
+/* Loading message */
+.loading-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: white;
+    font-size: clamp(1rem, 4vw, 1.2rem);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255,255,255,0.3);
+    border-top: 4px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error and message styles */
+.error-message {
+    color: #ff4444;
+    background: rgba(255, 68, 68, 0.1);
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    font-size: clamp(0.9rem, 4vw, 1.1rem);
+    border: 1px solid rgba(255, 68, 68, 0.3);
+}
+
+.success-message {
+    color: #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+    font-size: clamp(0.9rem, 4vw, 1.1rem);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+/* Debug info - smaller and less intrusive */
+.debug-info {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 0.5rem;
+    font-size: 0.7rem;
+    border-radius: 5px;
+    max-width: 250px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+/* Flash overlay */
+.flash-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.1s;
+}
+
+.flash-overlay.flash {
+    opacity: 0.9;
+}
+
+/* Scrollable content for small screens */
+@media (max-height: 600px) {
+    .container, .countdown-container {
+        min-height: auto;
+        padding: 1rem 0.5rem;
+    }
+    
+    .camera-preview {
+        height: 40vh;
+        margin-bottom: 0.5rem;
+    }
+    
+    .countdown-display {
+        font-size: clamp(2rem, 12vw, 4rem);
+        margin: 0.5rem 0;
+        min-height: 60px;
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (orientation: landscape) and (max-height: 500px) {
+    .countdown-container {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-around;
+    }
+    
+    .camera-preview {
+        width: 50vw;
+        height: 70vh;
+        margin-right: 1rem;
+        margin-bottom: 0;
+    }
+    
+    .countdown-controls {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 40vw;
+    }
+}

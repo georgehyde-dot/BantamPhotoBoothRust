@@ -1,0 +1,200 @@
+use axum::{
+    routing::{get, post},
+    Router,
+    extract::State,
+    response::Response,
+    body::Body,
+    http::{header, StatusCode},
+    Json,
+};
+
+use rust_embed::RustEmbed;
+
+#[derive(RustEmbed, Clone)]
+#[folder = "frontend/"] 
+#[include = "*.html"]
+#[include = "static/css/*.css"]
+#[include = "static/js/*.js"]
+#[include = "images/*"]
+struct Assets;
+
+use std::net::SocketAddr;
+use std::sync::{Arc, Mutex};
+use axum_embed::ServeEmbed;
+use tracing::{info, warn, error};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tokio::fs;
+use tower_http::services::ServeDir;
+
+// For HTTPS
+use axum_server::tls_rustls::RustlsConfig;
+use std::path::PathBuf;
+
+mod camera;
+mod handlers;
+mod session;
+
+/// AppState holds the shared state for our application, including the
+/// current photo booth session and the camera instance.
+pub struct AppState {
+    current_session: Mutex<Option<session::PhotoSession>>,
+    active_camera: Arc<dyn camera::Camera + Send + Sync>,
+    session_count: Mutex<u32>,
+}
+
+async fn serve_latest_photo() -> Result<Response<Body>, StatusCode> {
+    info!("Request for latest photo received");
+    
+    // Read the latest photo path
+    match std::fs::read_to_string("./photos/latest.txt") {
+        Ok(photo_path) => {
+            info!("Latest photo path from file: {}", photo_path);
+            
+            // Check if file exists
+            if !std::path::Path::new(&photo_path).exists() {
+                error!("Photo file does not exist at path: {}", photo_path);
+                return Err(StatusCode::NOT_FOUND);
+            }
+            
+            match fs::read(&photo_path).await {
+                Ok(contents) => {
+                    info!("Successfully read photo file, size: {} bytes", contents.len());
+                    Ok(Response::builder()
+                        .header(header::CONTENT_TYPE, "image/jpeg")
+                        .header(header::CACHE_CONTROL, "no-cache")
+                        .body(Body::from(contents))
+                        .unwrap())
+                }
+                Err(e) => {
+                    error!("Failed to read photo file: {}", e);
+                    Err(StatusCode::INTERNAL_SERVER_ERROR)
+                }
+            }
+        }
+        Err(e) => {
+            error!("Failed to read latest.txt file: {}", e);
+            Err(StatusCode::NOT_FOUND)
+        }
+    }
+}
+
+// Debug endpoint to check photo status
+async fn debug_photo_status() -> Json<serde_json::Value> {
+    let mut response = serde_json::json!({
+        "photos_dir_exists": std::path::Path::new("./photos").exists(),
+        "latest_txt_exists": std::path::Path::new("./photos/latest.txt").exists(),
+    });
+    
+    if let Ok(latest_path) = std::fs::read_to_string("./photos/latest.txt") {
+        response["latest_photo_path"] = serde_json::Value::String(latest_path.clone());
+        response["latest_photo_exists"] = serde_json::Value::Bool(std::path::Path::new(&latest_path).exists());
+        
+        if let Ok(metadata) = std::fs::metadata(&latest_path) {
+            response["latest_photo_size"] = serde_json::Value::Number(serde_json::Number::from(metadata.len()));
+        }
+    }
+    
+    // List all files in photos directory
+    if let Ok(entries) = std::fs::read_dir("./photos") {
+        let files: Vec<String> = entries
+            .filter_map(|entry| entry.ok())
+            .map(|entry| entry.file_name().to_string_lossy().to_string())
+            .collect();
+        response["photos_directory_files"] = serde_json::Value::Array(
+            files.into_iter().map(serde_json::Value::String).collect()
+        );
+    }
+    
+    Json(response)
+}
+
+#[tokio::main]
+async fn main() {
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer())
+        .with(tracing_subscriber::EnvFilter::new(
+            "info,tower_http=debug",
+        ))
+        .init();
+
+    // Fix: Add .await to each camera::new_camera call
+    let cam = match camera::new_camera("libcamera").await {
+        Ok(cam) => {
+            info!("Using libcamera");
+            cam
+        }
+        Err(_) => {
+            warn!("Libcamera failed, using mock camera");
+            camera::new_camera("mock").await
+                .expect("Failed to initialize mock camera")
+        }
+    };
+    
+    info!("Using camera type: {}", cam.type_name());
+
+    let shared_state = Arc::new(AppState {
+        current_session: Mutex::new(None),
+        active_camera: cam,
+        session_count: Mutex::new(0),
+    });
+
+    let app = Router::new()
+        // GET routes
+        .route("/start", get( || handlers::serve_html("templates/start.html") ))
+        .route("/select/weapon", get( || handlers::serve_html("templates/weapon_select.html") ))
+        .route("/select/land", get( || handlers::serve_html("templates/land_select.html") ))
+        .route("/select/companion", get( || handlers::serve_html("templates/companion_select.html") ))
+        .route("/entry/names", get( || handlers::serve_html("templates/name_entry.html") ))
+        .route("/camera/countdown", get( || handlers::serve_html("templates/countdown.html") ))
+        .route("/camera/retake", get( || handlers::serve_html("templates/retake_preview.html") ))
+        .route("/entry/email", get( || handlers::serve_html("templates/email_entry.html") ))
+        .route("/debug/files", get(handlers::list_embedded_files))
+        .route("/debug/photo", get(debug_photo_status))
+        
+        // API routes
+        .route("/api/session/start", post(handlers::start_session))
+        .route("/api/session/select_weapon", post(handlers::select_weapon))
+        .route("/api/session/select_land", post(handlers::select_land))
+        .route("/api/session/select_companion", post(handlers::select_companion))
+        .route("/api/session/submit_names", post(handlers::submit_names))
+        .route("/api/session/submit_email", post(handlers::submit_email))
+        .route("/api/camera/start_countdown", post(handlers::start_countdown))
+        .route("/api/camera/retake", post(handlers::retake_photo))
+        
+        // Photo serving
+        .route("/api/photo/latest", get(serve_latest_photo))
+        .nest_service("/photos", ServeDir::new("photos"))
+
+        // Static Files, embedded in binary
+        .nest_service("/", ServeEmbed::<Assets>::new())
+        
+        // Provide the shared state to all handlers.
+        .with_state(shared_state);
+
+    // currently set to run on 0.0.0.0 for fast iteration on my local network
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
+    
+    // Try to set up HTTPS if certificates exist
+    if std::path::Path::new("cert.pem").exists() && std::path::Path::new("key.pem").exists() {
+        info!("Setting up HTTPS server on https://{}", addr);
+        
+        let config = RustlsConfig::from_pem_file(
+            PathBuf::from("cert.pem"),
+            PathBuf::from("key.pem"),
+        )
+        .await
+        .expect("Failed to load TLS certificates");
+
+        axum_server::bind_rustls(addr, config)
+            .serve(app.into_make_service())
+            .await
+            .unwrap();
+    } else {
+        info!("No TLS certificates found, starting HTTP server on http://{}", addr);
+        info!("For camera access, generate certificates with:");
+        info!("openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj \"/C=US/ST=State/L=City/O=Organization/CN=BantamPhotoShop.local\"");
+        
+        let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+        axum::serve(listener, app).await.unwrap();
+    }
+}

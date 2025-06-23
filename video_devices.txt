@@ -1,0 +1,154 @@
+v4l2-ctl --device=/dev/video14 --all
+
+Driver Info:
+	Driver name      : bcm2835-isp
+	Card type        : bcm2835-isp
+	Bus info         : platform:bcm2835-isp
+	Driver version   : 6.12.25
+	Capabilities     : 0x84200001
+		Video Capture
+		Streaming
+		Extended Pix Format
+		Device Capabilities
+	Device Caps      : 0x04200001
+		Video Capture
+		Streaming
+		Extended Pix Format
+Media Driver Info:
+	Driver name      : bcm2835-isp
+	Model            : bcm2835-isp
+	Serial           :
+	Bus info         : platform:bcm2835-isp
+	Media version    : 6.12.25
+	Hardware revision: 0x00000000 (0)
+	Driver version   : 6.12.25
+Interface Info:
+	ID               : 0x0300000e
+	Type             : V4L Video
+Entity Info:
+	ID               : 0x0000000c (12)
+	Name             : bcm2835-isp0-capture1
+	Function         : V4L2 I/O
+	Pad 0x0100000d   : 0: Sink
+	  Link 0x02000010: from remote pad 0x1000003 of entity 'bcm2835_isp0' (Video Scaler): Data, Enabled, Immutable
+Priority: 2
+Format Video Capture:
+	Width/Height      : 640/480
+	Pixel Format      : 'YUYV' (YUYV 4:2:2)
+	Field             : None
+	Bytes per Line    : 1280
+	Size Image        : 614400
+	Colorspace        : SMPTE 170M
+	Transfer Function : Default (maps to Rec. 709)
+	YCbCr/HSV Encoding: Default (maps to ITU-R 601)
+	Quantization      : Default (maps to Limited Range)
+	Flags             :
+
+
+v4l2-ctl --device=/dev/video21 --all
+
+Driver Info:
+	Driver name      : bcm2835-isp
+	Card type        : bcm2835-isp
+	Bus info         : platform:bcm2835-isp
+	Driver version   : 6.12.25
+	Capabilities     : 0x84200001
+		Video Capture
+		Streaming
+		Extended Pix Format
+		Device Capabilities
+	Device Caps      : 0x04200001
+		Video Capture
+		Streaming
+		Extended Pix Format
+Media Driver Info:
+	Driver name      : bcm2835-isp
+	Model            : bcm2835-isp
+	Serial           :
+	Bus info         : platform:bcm2835-isp
+	Media version    : 6.12.25
+	Hardware revision: 0x00000000 (0)
+	Driver version   : 6.12.25
+FAIL: could not find device 81:5 in topology
+Priority: 2
+Format Video Capture:
+	Width/Height      : 1280/1280
+	Pixel Format      : 'YUYV' (YUYV 4:2:2)
+	Field             : None
+	Bytes per Line    : 2560
+	Size Image        : 3276800
+	Colorspace        : SMPTE 170M
+	Transfer Function : Default (maps to Rec. 709)
+	YCbCr/HSV Encoding: Default (maps to ITU-R 601)
+	Quantization      : Default (maps to Limited Range)
+	Flags             :
+
+ v4l2-ctl --device=/dev/video13 --all
+
+Driver Info:
+	Driver name      : bcm2835-isp
+	Card type        : bcm2835-isp
+	Bus info         : platform:bcm2835-isp
+	Driver version   : 6.12.25
+	Capabilities     : 0x84200002
+		Video Output
+		Streaming
+		Extended Pix Format
+		Device Capabilities
+	Device Caps      : 0x04200002
+		Video Output
+		Streaming
+		Extended Pix Format
+Media Driver Info:
+	Driver name      : bcm2835-isp
+	Model            : bcm2835-isp
+	Serial           :
+	Bus info         : platform:bcm2835-isp
+	Media version    : 6.12.25
+	Hardware revision: 0x00000000 (0)
+	Driver version   : 6.12.25
+Interface Info:
+	ID               : 0x03000008
+	Type             : V4L Video
+Entity Info:
+	ID               : 0x00000006 (6)
+	Name             : bcm2835-isp0-output0
+	Function         : V4L2 I/O
+	Pad 0x01000007   : 0: Source
+	  Link 0x0200000a: to remote pad 0x1000002 of entity 'bcm2835_isp0' (Video Scaler): Data, Enabled, Immutable
+Priority: 2
+Format Video Output:
+	Width/Height      : 1280/1280
+	Pixel Format      : 'BA81' (8-bit Bayer BGBG/GRGR)
+	Field             : None
+	Bytes per Line    : 1280
+	Size Image        : 1638400
+	Colorspace        : Raw
+	Transfer Function : Default (maps to None)
+	YCbCr/HSV Encoding: Default (maps to ITU-R 601)
+	Quantization      : Default (maps to Full Range)
+	Flags             :
+Selection Video Capture: crop, Left 0, Top 0, Width 0, Height 0, Flags:
+Selection Video Capture: crop_default, Left 0, Top 0, Width 1280, Height 1280, Flags:
+Selection Video Capture: crop_bounds, Left 0, Top 0, Width 1280, Height 1280, Flags:
+Selection Video Output: crop, Left 0, Top 0, Width 0, Height 0, Flags:
+Selection Video Output: crop_default, Left 0, Top 0, Width 1280, Height 1280, Flags:
+Selection Video Output: crop_bounds, Left 0, Top 0, Width 1280, Height 1280, Flags:
+
+User Controls
+
+                    red_balance 0x0098090e (int)    : min=1 max=65535 step=1 default=1000 value=1000 flags=slider
+                   blue_balance 0x0098090f (int)    : min=1 max=65535 step=1 default=1000 value=1000 flags=slider
+       colour_correction_matrix 0x009819e1 (u8)     : min=0 max=255 step=1 default=0 dims=[88] flags=has-payload
+                   lens_shading 0x009819e2 (u8)     : min=0 max=255 step=1 default=0 dims=[36] flags=has-payload, execute-on-write
+                    black_level 0x009819e3 (u8)     : min=0 max=255 step=1 default=0 dims=[12] flags=has-payload
+             green_equalisation 0x009819e4 (u8)     : min=0 max=255 step=1 default=0 dims=[16] flags=has-payload
+                          gamma 0x009819e5 (u8)     : min=0 max=255 step=1 default=0 dims=[136] flags=has-payload
+                        denoise 0x009819e6 (u8)     : min=0 max=255 step=1 default=0 dims=[24] flags=has-payload
+                        sharpen 0x009819e7 (u8)     : min=0 max=255 step=1 default=0 dims=[28] flags=has-payload
+     defective_pixel_correction 0x009819e8 (u8)     : min=0 max=255 step=1 default=0 dims=[8] flags=has-payload
+                 colour_denoise 0x009819e9 (u8)     : min=0 max=255 step=1 default=0 dims=[8] flags=has-payload
+
+Image Processing Controls
+
+                   digital_gain 0x009f0905 (int)    : min=1 max=65535 step=1 default=1000 value=1000

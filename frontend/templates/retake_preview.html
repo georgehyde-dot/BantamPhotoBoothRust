@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Photo Preview</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Your Photo</h1>
+        
+        <div class="photo-container">
+            <img id="photoPreview" class="photo-preview" src="/api/photo/latest" alt="Your photo" style="display: none;">
+            <div id="loadingMessage" class="loading-message">
+                <div class="spinner"></div>
+                <p>Loading your photo...</p>
+            </div>
+        </div>
+        
+        <div class="photo-actions">
+            <button id="retakeBtn" class="action-button retake-btn">📷 Retake Photo</button>
+            <button id="acceptBtn" class="action-button accept-btn">✅ Keep Photo</button>
+        </div>
+        
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+        
+        <!-- Debug info -->
+        <div id="debugInfo" class="debug-info" style="display: none;"></div>
+    </div>
+    
+    <script>
+        let debugMode = window.innerWidth > 768;
+        
+        function updateDebug(message) {
+            if (debugMode) {
+                const debugDiv = document.getElementById('debugInfo');
+                debugDiv.style.display = 'block';
+                debugDiv.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
+                const lines = debugDiv.innerHTML.split('<br>');
+                if (lines.length > 10) {
+                    debugDiv.innerHTML = lines.slice(-10).join('<br>');
+                }
+                console.log('DEBUG:', message);
+            }
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            updateDebug('ERROR: ' + message);
+            
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Load the photo
+        function loadPhoto() {
+            const img = document.getElementById('photoPreview');
+            const loading = document.getElementById('loadingMessage');
+            
+            updateDebug('Loading photo...');
+            
+            // Add timestamp to prevent caching
+            const timestamp = new Date().getTime();
+            img.src = `/api/photo/latest?t=${timestamp}`;
+            
+            img.onload = function() {
+                updateDebug('Photo loaded successfully');
+                loading.style.display = 'none';
+                img.style.display = 'block';
+            };
+            
+            img.onerror = function() {
+                updateDebug('Failed to load photo');
+                loading.innerHTML = `
+                    <div style="font-size: 2em; margin-bottom: 10px;">❌</div>
+                    <p>Failed to load photo</p>
+                `;
+                showError('Could not load photo. Please try again.');
+            };
+        }
+        
+        // Retake photo
+        async function retakePhoto() {
+            updateDebug('Retaking photo...');
+            
+            const retakeBtn = document.getElementById('retakeBtn');
+            const acceptBtn = document.getElementById('acceptBtn');
+            
+            retakeBtn.disabled = true;
+            acceptBtn.disabled = true;
+            retakeBtn.textContent = '📷 Taking Photo...';
+            
+            try {
+                const response = await fetch('/api/camera/retake', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (response.ok) {
+                    updateDebug('Photo retaken successfully');
+                    // Reload the page to show new photo
+                    window.location.reload();
+                } else {
+                    const errorText = await response.text();
+                    updateDebug('Server error: ' + errorText);
+                    showError('Failed to retake photo: ' + response.status);
+                    
+                    // Re-enable buttons
+                    retakeBtn.disabled = false;
+                    acceptBtn.disabled = false;
+                    retakeBtn.textContent = '📷 Retake Photo';
+                }
+            } catch (error) {
+                updateDebug('Network error: ' + error.message);
+                showError('Network error: ' + error.message);
+                
+                // Re-enable buttons
+                retakeBtn.disabled = false;
+                acceptBtn.disabled = false;
+                retakeBtn.textContent = '📷 Retake Photo';
+            }
+        }
+        
+        // Accept photo and continue
+        function acceptPhoto() {
+            updateDebug('Photo accepted, continuing to email entry');
+            window.location.href = '/entry/email';
+        }
+        
+        // Event listeners
+        document.getElementById('retakeBtn').addEventListener('click', retakePhoto);
+        document.getElementById('acceptBtn').addEventListener('click', acceptPhoto);
+        
+        // Load photo when page loads
+        window.addEventListener('load', () => {
+            updateDebug('Page loaded, loading photo...');
+            loadPhoto();
+        });
+    </script>
+</body>
+</html>
