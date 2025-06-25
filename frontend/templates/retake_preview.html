@@ -5,11 +5,133 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <title>Photo Preview</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        .photo-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            box-sizing: border-box;
+            min-height: 0;
+        }
+        
+        .photo-preview {
+            max-width: 95vw;
+            max-height: calc(100vh - 80px);
+            width: auto;
+            height: auto;
+            border: 3px solid #333;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            object-fit: contain;
+        }
+        
+        .loading-message {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #666;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .photo-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            border-top: 1px solid #ddd;
+            flex-shrink: 0;
+        }
+        
+        .action-button {
+            padding: 8px 16px;
+            font-size: 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            min-width: 80px;
+            font-weight: 500;
+        }
+        
+        .retake-btn {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .retake-btn:hover {
+            background: #ff5252;
+            transform: translateY(-1px);
+        }
+        
+        .accept-btn {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .accept-btn:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+        
+        .action-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .error-message {
+            color: #ff4444;
+            margin-top: 10px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 12px;
+            border-radius: 6px;
+            position: fixed;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 200;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>Your Photo</h1>
-        
         <div class="photo-container">
             <img id="photoPreview" class="photo-preview" src="/api/photo/latest" alt="Your photo" style="display: none;">
             <div id="loadingMessage" class="loading-message">
@@ -19,37 +141,18 @@
         </div>
         
         <div class="photo-actions">
-            <button id="retakeBtn" class="action-button retake-btn">📷 Retake Photo</button>
-            <button id="acceptBtn" class="action-button accept-btn">✅ Keep Photo</button>
+            <button id="retakeBtn" class="action-button retake-btn">📷 Retake</button>
+            <button id="acceptBtn" class="action-button accept-btn">✅ Keep</button>
         </div>
         
         <div id="errorMessage" class="error-message" style="display: none;"></div>
-        
-        <!-- Debug info -->
-        <div id="debugInfo" class="debug-info" style="display: none;"></div>
     </div>
     
     <script>
-        let debugMode = window.innerWidth > 768;
-        
-        function updateDebug(message) {
-            if (debugMode) {
-                const debugDiv = document.getElementById('debugInfo');
-                debugDiv.style.display = 'block';
-                debugDiv.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
-                const lines = debugDiv.innerHTML.split('<br>');
-                if (lines.length > 10) {
-                    debugDiv.innerHTML = lines.slice(-10).join('<br>');
-                }
-                console.log('DEBUG:', message);
-            }
-        }
-        
         function showError(message) {
             const errorDiv = document.getElementById('errorMessage');
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
-            updateDebug('ERROR: ' + message);
             
             setTimeout(() => {
                 errorDiv.style.display = 'none';
@@ -61,20 +164,16 @@
             const img = document.getElementById('photoPreview');
             const loading = document.getElementById('loadingMessage');
             
-            updateDebug('Loading photo...');
-            
             // Add timestamp to prevent caching
             const timestamp = new Date().getTime();
             img.src = `/api/photo/latest?t=${timestamp}`;
             
             img.onload = function() {
-                updateDebug('Photo loaded successfully');
                 loading.style.display = 'none';
                 img.style.display = 'block';
             };
             
             img.onerror = function() {
-                updateDebug('Failed to load photo');
                 loading.innerHTML = `
                     <div style="font-size: 2em; margin-bottom: 10px;">❌</div>
                     <p>Failed to load photo</p>
@@ -85,8 +184,6 @@
         
         // Retake photo
         async function retakePhoto() {
-            updateDebug('Retaking photo...');
-            
             const retakeBtn = document.getElementById('retakeBtn');
             const acceptBtn = document.getElementById('acceptBtn');
             
@@ -103,33 +200,29 @@
                 });
                 
                 if (response.ok) {
-                    updateDebug('Photo retaken successfully');
                     // Reload the page to show new photo
                     window.location.reload();
                 } else {
                     const errorText = await response.text();
-                    updateDebug('Server error: ' + errorText);
                     showError('Failed to retake photo: ' + response.status);
                     
                     // Re-enable buttons
                     retakeBtn.disabled = false;
                     acceptBtn.disabled = false;
-                    retakeBtn.textContent = '📷 Retake Photo';
+                    retakeBtn.textContent = '📷 Retake';
                 }
             } catch (error) {
-                updateDebug('Network error: ' + error.message);
                 showError('Network error: ' + error.message);
                 
                 // Re-enable buttons
                 retakeBtn.disabled = false;
                 acceptBtn.disabled = false;
-                retakeBtn.textContent = '📷 Retake Photo';
+                retakeBtn.textContent = '📷 Retake';
             }
         }
         
         // Accept photo and continue
         function acceptPhoto() {
-            updateDebug('Photo accepted, continuing to email entry');
             window.location.href = '/entry/email';
         }
         
@@ -139,7 +232,6 @@
         
         // Load photo when page loads
         window.addEventListener('load', () => {
-            updateDebug('Page loaded, loading photo...');
             loadPhoto();
         });
     </script>

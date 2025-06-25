@@ -117,7 +117,15 @@ async fn main() {
         ))
         .init();
 
-    // Fix: Add .await to each camera::new_camera call
+    // Check if we're in kiosk mode
+    let kiosk_mode = std::env::var("KIOSK_MODE").is_ok() || 
+                     std::path::Path::new("/tmp/kiosk_mode").exists() ||
+                     std::env::args().any(|arg| arg == "--kiosk");
+    
+    if kiosk_mode {
+        info!("KIOSK MODE DETECTED - Will use HTTP only");
+    }
+
     let cam = match camera::new_camera("libcamera").await {
         Ok(cam) => {
             info!("Using libcamera");
@@ -139,19 +147,7 @@ async fn main() {
     });
 
     let app = Router::new()
-        // GET routes
-        .route("/start", get( || handlers::serve_html("templates/start.html") ))
-        .route("/select/weapon", get( || handlers::serve_html("templates/weapon_select.html") ))
-        .route("/select/land", get( || handlers::serve_html("templates/land_select.html") ))
-        .route("/select/companion", get( || handlers::serve_html("templates/companion_select.html") ))
-        .route("/entry/names", get( || handlers::serve_html("templates/name_entry.html") ))
-        .route("/camera/countdown", get( || handlers::serve_html("templates/countdown.html") ))
-        .route("/camera/retake", get( || handlers::serve_html("templates/retake_preview.html") ))
-        .route("/entry/email", get( || handlers::serve_html("templates/email_entry.html") ))
-        .route("/debug/files", get(handlers::list_embedded_files))
-        .route("/debug/photo", get(debug_photo_status))
-        
-        // API routes
+        // API routes first (more specific)
         .route("/api/session/start", post(handlers::start_session))
         .route("/api/session/select_weapon", post(handlers::select_weapon))
         .route("/api/session/select_land", post(handlers::select_land))
@@ -160,22 +156,45 @@ async fn main() {
         .route("/api/session/submit_email", post(handlers::submit_email))
         .route("/api/camera/start_countdown", post(handlers::start_countdown))
         .route("/api/camera/retake", post(handlers::retake_photo))
+        .route("/api/photo/latest", get(serve_latest_photo))
+        
+        // Debug routes
+        .route("/debug/files", get(handlers::list_embedded_files))
+        .route("/debug/photo", get(debug_photo_status))
+        
+        // HTML page routes
+        .route("/start", get( || handlers::serve_html("templates/start.html") ))
+        .route("/select/weapon", get( || handlers::serve_html("templates/weapon_select.html") ))
+        .route("/select/land", get( || handlers::serve_html("templates/land_select.html") ))
+        .route("/select/companion", get( || handlers::serve_html("templates/companion_select.html") ))
+        .route("/entry/names", get( || handlers::serve_html("templates/name_entry.html") ))
+        .route("/camera/countdown", get( || handlers::serve_html("templates/countdown.html") ))
+        .route("/camera/retake", get( || handlers::serve_html("templates/retake_preview.html") ))
+        .route("/entry/email", get( || handlers::serve_html("templates/email_entry.html") ))
         
         // Photo serving
-        .route("/api/photo/latest", get(serve_latest_photo))
         .nest_service("/photos", ServeDir::new("photos"))
-
-        // Static Files, embedded in binary
-        .nest_service("/", ServeEmbed::<Assets>::new())
+        
+        // Root route (must be last)
+        .route("/", get(|| handlers::serve_html("templates/start.html")))
+        
+        // Static Files, embedded in binary (catch-all, must be very last)
+        .route("/api/keyboard/toggle", post(handlers::toggle_keyboard))
+        .route("/api/keyboard/show", post(handlers::show_keyboard))
+        .route("/api/keyboard/hide", post(handlers::hide_keyboard))
+        .fallback_service(ServeEmbed::<Assets>::new())
         
         // Provide the shared state to all handlers.
         .with_state(shared_state);
 
-    // currently set to run on 0.0.0.0 for fast iteration on my local network
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
     
-    // Try to set up HTTPS if certificates exist
-    if std::path::Path::new("cert.pem").exists() && std::path::Path::new("key.pem").exists() {
+    // Force HTTP in kiosk mode, otherwise try HTTPS then fallback to HTTP
+    if kiosk_mode {
+        info!("Running in kiosk mode - using HTTP server on http://{}", addr);
+        let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+        axum::serve(listener, app).await.unwrap();
+    } else if std::path::Path::new("cert.pem").exists() && std::path::Path::new("key.pem").exists() {
         info!("Setting up HTTPS server on https://{}", addr);
         
         let config = RustlsConfig::from_pem_file(

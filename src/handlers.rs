@@ -7,6 +7,7 @@ use axum::{
 use serde::Deserialize;
 use std::sync::{Arc, Mutex};
 use tracing::{error, info};
+use tokio::process::Command;
 
 pub async fn serve_html(filename: &str) -> impl IntoResponse {
     match Assets::get(filename) {
@@ -28,7 +29,6 @@ pub async fn list_embedded_files() -> impl IntoResponse {
         "total_count": files.len()
     }))
 }
-
 
 /// Starts a new photo booth session, replacing any existing one.
 pub async fn start_session(State(state): State<Arc<AppState>>) -> impl IntoResponse {
@@ -109,14 +109,6 @@ pub async fn start_countdown(State(state): State<Arc<AppState>>) -> Result<Json<
     match state.active_camera.take_photo_to_file().await {
         Ok(photo_path) => {
             info!("Photo captured successfully to: {}", photo_path);
-            
-            // Verify the file exists
-            if std::path::Path::new(&photo_path).exists() {
-                info!("Photo file verified to exist at: {}", photo_path);
-            } else {
-                error!("Photo file does not exist at: {}", photo_path);
-            }
-            
             Ok(Json(serde_json::json!({
                 "status": "success",
                 "photo_path": photo_path
@@ -165,4 +157,60 @@ pub async fn submit_email(
         "status": "success",
         "message": "Photo will be sent to your email!"
     })))
+}
+
+// Keyboard control handlers
+pub async fn toggle_keyboard() -> impl IntoResponse {
+    info!("API: Toggle keyboard called");
+    
+    match Command::new("/home/prospero/toggle_keyboard.sh")
+        .output()
+        .await
+    {
+        Ok(output) => {
+            let result = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            info!("Keyboard toggle result: {}", result);
+            (StatusCode::OK, result)
+        }
+        Err(e) => {
+            error!("Failed to toggle keyboard: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "error".to_string())
+        }
+    }
+}
+
+pub async fn show_keyboard() -> impl IntoResponse {
+    info!("API: Show keyboard called");
+    
+    match Command::new("/home/prospero/show_keyboard.sh")
+        .output()
+        .await
+    {
+        Ok(_) => {
+            info!("Keyboard show command executed");
+            StatusCode::OK
+        }
+        Err(e) => {
+            error!("Failed to show keyboard: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
+    }
+}
+
+pub async fn hide_keyboard() -> impl IntoResponse {
+    info!("API: Hide keyboard called");
+    
+    match Command::new("/home/prospero/hide_keyboard.sh")
+        .output()
+        .await
+    {
+        Ok(_) => {
+            info!("Keyboard hide command executed");
+            StatusCode::OK
+        }
+        Err(e) => {
+            error!("Failed to hide keyboard: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
+    }
 }

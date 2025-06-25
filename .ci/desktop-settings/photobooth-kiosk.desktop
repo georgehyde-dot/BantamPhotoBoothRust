@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Photo Booth Kiosk
+Exec=/home/prospero/kiosk_startup.sh
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true

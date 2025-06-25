@@ -5,6 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enter Email</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .keyboard-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        
+        .keyboard-toggle:hover {
+            background: #45a049;
+        }
+        
+        /* Make input fields more touch-friendly */
+        #emailInput {
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            min-height: 50px;
+            width: 100%;
+            max-width: 400px;
+            /* Ensure touch events work */
+            touch-action: manipulation;
+            user-select: text;
+        }
+        
+        #emailInput:focus {
+            border-color: #4CAF50;
+            outline: none;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+        }
+        
+        .debug-info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            font-size: 12px;
+            border-radius: 5px;
+            z-index: 1001;
+            max-width: 300px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -12,19 +66,204 @@
         <p>Enter your email address to receive your photo:</p>
         
         <form id="emailForm">
-            <input type="email" id="emailInput" placeholder="your@email.com" required>
+            <input type="email" id="emailInput" placeholder="your@email.com" required autocomplete="off">
             <button type="submit" class="action-button">Send Photo</button>
         </form>
         
         <div id="message" style="display: none; margin-top: 20px;"></div>
+        
+        <!-- Keyboard toggle button -->
+        <button id="keyboardToggle" class="keyboard-toggle">⌨️</button>
+        
+        <!-- Debug info -->
+        <div id="debugInfo" class="debug-info" style="display: none;"></div>
     </div>
     
     <script>
-        document.getElementById('emailForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        let keyboardVisible = false;
+        let currentInput = null;
+        let debugMode = false; // Set to true for debugging
+        
+        function updateDebug(message) {
+            if (debugMode) {
+                const debugDiv = document.getElementById('debugInfo');
+                debugDiv.style.display = 'block';
+                debugDiv.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
+                const lines = debugDiv.innerHTML.split('<br>');
+                if (lines.length > 10) {
+                    debugDiv.innerHTML = lines.slice(-10).join('<br>');
+                }
+                console.log('DEBUG:', message);
+            }
+        }
+        
+        async function hideKeyboard() {
+            if (keyboardVisible) {
+                updateDebug('Hiding keyboard...');
+                try {
+                    await fetch('/api/keyboard/hide', { method: 'POST' });
+                    keyboardVisible = false;
+                    updateDebug('Keyboard hidden');
+                } catch (err) {
+                    updateDebug('Keyboard hide failed: ' + err);
+                }
+            }
+        }
+        
+        async function showKeyboard() {
+            if (!keyboardVisible) {
+                updateDebug('Showing keyboard...');
+                try {
+                    await fetch('/api/keyboard/show', { method: 'POST' });
+                    keyboardVisible = true;
+                    updateDebug('Keyboard shown');
+                } catch (err) {
+                    updateDebug('Keyboard show failed: ' + err);
+                }
+            }
+        }
+        
+        async function toggleKeyboard() {
+            updateDebug('Toggling keyboard...');
+            try {
+                const response = await fetch('/api/keyboard/toggle', { method: 'POST' });
+                const result = await response.text();
+                keyboardVisible = result === 'shown';
+                updateDebug('Keyboard toggle result: ' + result);
+                return result;
+            } catch (err) {
+                updateDebug('Keyboard toggle failed: ' + err);
+                return 'error';
+            }
+        }
+        
+        function setupInputEvents() {
+            const inputs = document.querySelectorAll('input[type="email"], input[type="text"]');
+            updateDebug('Setting up events for ' + inputs.length + ' inputs');
             
-            const email = document.getElementById('emailInput').value;
+            inputs.forEach((input, index) => {
+                const newInput = input.cloneNode(true);
+                input.parentNode.replaceChild(newInput, input);
+                
+                // Touch events
+                newInput.addEventListener('touchstart', (e) => {
+                    updateDebug('TOUCHSTART on ' + newInput.id);
+                    e.preventDefault();
+                    currentInput = newInput;
+                    newInput.focus();
+                    showKeyboard();
+                }, { passive: false });
+                
+                newInput.addEventListener('touchend', (e) => {
+                    updateDebug('TOUCHEND on ' + newInput.id);
+                    e.preventDefault();
+                    setTimeout(() => {
+                        newInput.focus();
+                        showKeyboard();
+                    }, 50);
+                }, { passive: false });
+                
+                // Click events
+                newInput.addEventListener('click', (e) => {
+                    updateDebug('CLICK on ' + newInput.id);
+                    currentInput = newInput;
+                    showKeyboard();
+                });
+                
+                // Focus events
+                newInput.addEventListener('focus', (e) => {
+                    updateDebug('FOCUS on ' + newInput.id);
+                    currentInput = newInput;
+                    showKeyboard();
+                });
+                
+                // Blur events
+                newInput.addEventListener('blur', (e) => {
+                    updateDebug('BLUR on ' + newInput.id);
+                    setTimeout(() => {
+                        if (!document.querySelector('input:focus')) {
+                            hideKeyboard();
+                            currentInput = null;
+                        }
+                    }, 300);
+                });
+                
+                // Key events - ENSURE keyboard hides on Enter
+                newInput.addEventListener('keydown', (e) => {
+                    updateDebug('KEYDOWN: ' + e.key + ' on ' + newInput.id);
+                    
+                    if (e.key === 'Enter') {
+                        updateDebug('Enter key pressed - hiding keyboard and submitting');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // FORCE hide keyboard immediately
+                        hideKeyboard().then(() => {
+                            // Blur the input to ensure it loses focus
+                            newInput.blur();
+                            currentInput = null;
+                            
+                            // Submit after ensuring keyboard is hidden
+                            setTimeout(() => {
+                                document.getElementById('emailForm').dispatchEvent(new Event('submit', { bubbles: true }));
+                            }, 300);
+                        });
+                    }
+                });
+            });
+        }
+        
+        // Manual keyboard toggle
+        document.getElementById('keyboardToggle').addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleKeyboard();
+        });
+        
+        // Global touch/click handlers to hide keyboard
+        document.addEventListener('click', (e) => {
+            if (!e.target.matches('input[type="email"], input[type="text"], .keyboard-toggle') &&
+                !e.target.closest('.keyboard-toggle')) {
+                setTimeout(() => {
+                    if (!document.querySelector('input:focus')) {
+                        hideKeyboard();
+                        currentInput = null;
+                    }
+                }, 100);
+            }
+        });
+        
+        document.addEventListener('touchstart', (e) => {
+            if (!e.target.matches('input[type="email"], input[type="text"], .keyboard-toggle') &&
+                !e.target.closest('.keyboard-toggle')) {
+                setTimeout(() => {
+                    if (!document.querySelector('input:focus')) {
+                        hideKeyboard();
+                        currentInput = null;
+                    }
+                }, 200);
+            }
+        });
+        
+        // Form submission - ENSURE keyboard is hidden
+        document.getElementById('emailForm').addEventListener('submit', async function(e) {
+            updateDebug('Form submit event triggered');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // FORCE hide keyboard and blur inputs
+            await hideKeyboard();
+            document.getElementById('emailInput').blur();
+            currentInput = null;
+            
+            const email = document.getElementById('emailInput').value.trim();
             const messageDiv = document.getElementById('message');
+            
+            if (!email) {
+                messageDiv.innerHTML = '<p style="color: red;">Please enter an email address.</p>';
+                messageDiv.style.display = 'block';
+                return;
+            }
             
             try {
                 const response = await fetch('/api/session/submit_email', {
@@ -39,7 +278,8 @@
                     messageDiv.innerHTML = '<p style="color: green;">Photo sent! Check your email.</p>';
                     messageDiv.style.display = 'block';
                     
-                    // Redirect to start after a delay
+                    // Ensure keyboard stays hidden during redirect
+                    await hideKeyboard();
                     setTimeout(() => {
                         window.location.href = '/start';
                     }, 3000);
@@ -52,6 +292,30 @@
                 messageDiv.style.display = 'block';
             }
         });
+        
+        // Initialize
+        function initializePage() {
+            updateDebug('Initializing page...');
+            setupInputEvents();
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePage);
+        } else {
+            initializePage();
+        }
+        
+        setTimeout(initializePage, 100);
+        
+        // Prevent zoom on double tap
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = new Date().getTime();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
     </script>
 </body>
 </html>

@@ -18,5 +18,27 @@
         </div>
     </div>
     <script src="/static/js/app.js"></script>
+    <script>
+        // Hide keyboard on any touch/click outside text inputs
+        async function hideKeyboard() {
+            try {
+                await fetch('/api/keyboard/hide', { method: 'POST' });
+            } catch (err) {
+                console.log('Keyboard hide failed:', err);
+            }
+        }
+        
+        document.addEventListener('click', (e) => {
+            if (!e.target.matches('input[type="email"], input[type="text"], textarea')) {
+                hideKeyboard();
+            }
+        });
+        
+        document.addEventListener('touchstart', (e) => {
+            if (!e.target.matches('input[type="email"], input[type="text"], textarea')) {
+                hideKeyboard();
+            }
+        });
+    </script>
 </body>
 </html>

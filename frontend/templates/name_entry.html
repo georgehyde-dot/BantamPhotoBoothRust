@@ -3,43 +3,375 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photo Booth - Enter Names</title>
+    <title>Enter Names</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .keyboard-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+        
+        .keyboard-toggle:hover {
+            background: #45a049;
+        }
+        
+        /* Make input fields more touch-friendly */
+        .input-group input {
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            min-height: 50px;
+            /* Ensure touch events work */
+            touch-action: manipulation;
+            user-select: text;
+        }
+        
+        .input-group input:focus {
+            border-color: #4CAF50;
+            outline: none;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+        }
+        
+        /* Debug styling to see touch areas */
+        .input-group {
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .debug-info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            font-size: 12px;
+            border-radius: 5px;
+            z-index: 1001;
+            max-width: 300px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>Enter Names</h1>
-        <p>Enter the names of people in the photo (at least one required):</p>
-        
-        <form id="nameForm" class="name-form">
+        <h1>Enter Your Names</h1>
+        <form id="namesForm">
             <div class="input-group">
-                <label for="name1">Person 1:</label>
-                <input type="text" id="name1" name="name1" placeholder="Enter name">
+                <label for="name1">Player 1 Name:</label>
+                <input type="text" id="name1" name="name1" required autocomplete="off">
             </div>
-            
             <div class="input-group">
-                <label for="name2">Person 2:</label>
-                <input type="text" id="name2" name="name2" placeholder="Enter name (optional)">
+                <label for="name2">Player 2 Name:</label>
+                <input type="text" id="name2" name="name2" autocomplete="off">
             </div>
-            
-            <div class="input-group">
-                <label for="name3">Person 3:</label>
-                <input type="text" id="name3" name="name3" placeholder="Enter name (optional)">
-            </div>
-            
-            <div class="input-group">
-                <label for="name4">Person 4:</label>
-                <input type="text" id="name4" name="name4" placeholder="Enter name (optional)">
-            </div>
-            
-            <div class="input-group">
-                <label for="name5">Person 5:</label>
-                <input type="text" id="name5" name="name5" placeholder="Enter name (optional)">
-            </div>
-            
             <button type="submit" class="action-button">Continue</button>
         </form>
+        
+        <!-- Keyboard toggle button -->
+        <button id="keyboardToggle" class="keyboard-toggle">⌨️</button>
+        
+        <!-- Debug info -->
+        <div id="debugInfo" class="debug-info" style="display: none;"></div>
     </div>
-    <script src="/static/js/app.js"></script>
+    
+    <script>
+        let keyboardVisible = false;
+        let currentInput = null;
+        let debugMode = true; // Set to false to hide debug info
+        
+        function updateDebug(message) {
+            if (debugMode) {
+                const debugDiv = document.getElementById('debugInfo');
+                debugDiv.style.display = 'block';
+                debugDiv.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
+                // Keep only last 10 messages
+                const lines = debugDiv.innerHTML.split('<br>');
+                if (lines.length > 10) {
+                    debugDiv.innerHTML = lines.slice(-10).join('<br>');
+                }
+                console.log('DEBUG:', message);
+            }
+        }
+        
+        // Enhanced keyboard control functions
+        async function toggleKeyboard() {
+            updateDebug('Toggling keyboard...');
+            try {
+                const response = await fetch('/api/keyboard/toggle', { method: 'POST' });
+                const result = await response.text();
+                keyboardVisible = result === 'shown';
+                updateDebug('Keyboard toggle result: ' + result);
+                return result;
+            } catch (err) {
+                updateDebug('Keyboard toggle failed: ' + err);
+                return 'error';
+            }
+        }
+        
+        async function showKeyboard() {
+            if (!keyboardVisible) {
+                updateDebug('Showing keyboard...');
+                try {
+                    await fetch('/api/keyboard/show', { method: 'POST' });
+                    keyboardVisible = true;
+                    updateDebug('Keyboard shown');
+                } catch (err) {
+                    updateDebug('Keyboard show failed: ' + err);
+                }
+            } else {
+                updateDebug('Keyboard already visible');
+            }
+        }
+        
+        async function hideKeyboard() {
+            if (keyboardVisible) {
+                updateDebug('Hiding keyboard...');
+                try {
+                    await fetch('/api/keyboard/hide', { method: 'POST' });
+                    keyboardVisible = false;
+                    updateDebug('Keyboard hidden');
+                } catch (err) {
+                    updateDebug('Keyboard hide failed: ' + err);
+                }
+            } else {
+                updateDebug('Keyboard already hidden');
+            }
+        }
+        
+        // Enhanced input field event handling
+        function setupInputEvents() {
+            const inputs = document.querySelectorAll('input[type="text"]');
+            updateDebug('Setting up events for ' + inputs.length + ' inputs');
+            
+            inputs.forEach((input, index) => {
+                updateDebug('Setting up input ' + index + ' (' + input.id + ')');
+                
+                // Remove any existing event listeners by cloning the element
+                const newInput = input.cloneNode(true);
+                input.parentNode.replaceChild(newInput, input);
+                
+                // Touch events - most important for kiosk
+                newInput.addEventListener('touchstart', (e) => {
+                    updateDebug('TOUCHSTART on ' + newInput.id);
+                    e.preventDefault(); // Prevent default touch behavior
+                    currentInput = newInput;
+                    newInput.focus();
+                    showKeyboard();
+                }, { passive: false });
+                
+                newInput.addEventListener('touchend', (e) => {
+                    updateDebug('TOUCHEND on ' + newInput.id);
+                    e.preventDefault();
+                    // Ensure focus and keyboard show
+                    setTimeout(() => {
+                        newInput.focus();
+                        showKeyboard();
+                    }, 50);
+                }, { passive: false });
+                
+                // Click events for mouse/desktop testing
+                newInput.addEventListener('click', (e) => {
+                    updateDebug('CLICK on ' + newInput.id);
+                    currentInput = newInput;
+                    showKeyboard();
+                });
+                
+                // Focus events
+                newInput.addEventListener('focus', (e) => {
+                    updateDebug('FOCUS on ' + newInput.id);
+                    currentInput = newInput;
+                    showKeyboard();
+                });
+                
+                // Blur events with delay
+                newInput.addEventListener('blur', (e) => {
+                    updateDebug('BLUR on ' + newInput.id);
+                    setTimeout(() => {
+                        if (!document.querySelector('input:focus')) {
+                            updateDebug('No input focused, hiding keyboard');
+                            hideKeyboard();
+                            currentInput = null;
+                        }
+                    }, 300);
+                });
+                
+                // Key events - handle Enter key properly
+                newInput.addEventListener('keydown', (e) => {
+                    updateDebug('KEYDOWN: ' + e.key + ' on ' + newInput.id);
+                    
+                    if (e.key === 'Enter') {
+                        updateDebug('Enter key pressed');
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const allInputs = Array.from(document.querySelectorAll('input[type="text"]'));
+                        const currentIndex = allInputs.indexOf(newInput);
+                        
+                        if (currentIndex < allInputs.length - 1) {
+                            // Move to next input
+                            updateDebug('Moving to next input');
+                            allInputs[currentIndex + 1].focus();
+                        } else {
+                            // Last input - submit form
+                            updateDebug('Last input, submitting form');
+                            hideKeyboard().then(() => {
+                                setTimeout(() => {
+                                    document.getElementById('namesForm').dispatchEvent(new Event('submit', { bubbles: true }));
+                                }, 200);
+                            });
+                        }
+                    }
+                });
+                
+                // Input event to track typing
+                newInput.addEventListener('input', (e) => {
+                    updateDebug('INPUT event on ' + newInput.id + ': ' + newInput.value);
+                });
+            });
+        }
+        
+        // Manual keyboard toggle
+        document.getElementById('keyboardToggle').addEventListener('click', (e) => {
+            updateDebug('Keyboard toggle button clicked');
+            e.preventDefault();
+            e.stopPropagation();
+            toggleKeyboard();
+        });
+        
+        // Handle clicks outside input areas
+        document.addEventListener('click', (e) => {
+            updateDebug('Document click on: ' + e.target.tagName + ' ' + (e.target.id || e.target.className));
+            
+            if (!e.target.matches('input[type="text"], .keyboard-toggle') &&
+                !e.target.closest('.keyboard-toggle')) {
+                
+                setTimeout(() => {
+                    if (!document.querySelector('input:focus')) {
+                        updateDebug('Hiding keyboard due to outside click');
+                        hideKeyboard();
+                        currentInput = null;
+                    }
+                }, 100);
+            }
+        });
+        
+        // Handle touches outside input areas
+        document.addEventListener('touchstart', (e) => {
+            updateDebug('Document touchstart on: ' + e.target.tagName + ' ' + (e.target.id || e.target.className));
+            
+            if (!e.target.matches('input[type="text"], .keyboard-toggle') &&
+                !e.target.closest('.keyboard-toggle')) {
+                
+                setTimeout(() => {
+                    if (!document.querySelector('input:focus')) {
+                        updateDebug('Hiding keyboard due to outside touch');
+                        hideKeyboard();
+                        currentInput = null;
+                    }
+                }, 200);
+            }
+        });
+        
+        // Form submission
+        document.getElementById('namesForm').addEventListener('submit', async (e) => {
+            updateDebug('Form submit event triggered');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Always hide keyboard first
+            await hideKeyboard();
+            
+            const names = [
+                document.getElementById('name1').value.trim(),
+                document.getElementById('name2').value.trim()
+            ].filter(name => name !== '');
+            
+            updateDebug('Submitting names: ' + JSON.stringify(names));
+            
+            if (names.length === 0) {
+                alert('Please enter at least one name');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/session/submit_names', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ names })
+                });
+                
+                if (response.ok) {
+                    updateDebug('Names submitted successfully, navigating...');
+                    // Extra delay to ensure keyboard is fully hidden
+                    setTimeout(() => {
+                        window.location.href = '/camera/countdown';
+                    }, 500);
+                } else {
+                    updateDebug('Failed to submit names: ' + response.status);
+                    alert('Failed to submit names');
+                }
+            } catch (error) {
+                updateDebug('Network error: ' + error.message);
+                alert('Network error: ' + error.message);
+            }
+        });
+        
+        // Initialize when page loads
+        function initializePage() {
+            updateDebug('Initializing page...');
+            setupInputEvents();
+            
+            // Focus first input to test
+            setTimeout(() => {
+                const firstInput = document.getElementById('name1');
+                if (firstInput) {
+                    updateDebug('Focusing first input for testing');
+                    firstInput.focus();
+                }
+            }, 1000);
+        }
+        
+        // Multiple initialization attempts
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePage);
+        } else {
+            initializePage();
+        }
+        
+        // Also try after a short delay
+        setTimeout(initializePage, 100);
+        
+        // Prevent zoom on double tap
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = new Date().getTime();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+        
+        // Prevent default touch behaviors that might interfere
+        document.addEventListener('touchmove', (e) => {
+            // Allow scrolling but prevent other gestures
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
 </body>
 </html>

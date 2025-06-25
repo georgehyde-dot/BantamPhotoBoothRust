@@ -2,29 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Photo Countdown</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
         .countdown-container {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
             height: 100vh;
             text-align: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        
+        .countdown-message {
+            font-size: 24px;
+            margin: 10px 0;
+            color: #333;
+            flex-shrink: 0;
         }
         
         .camera-preview {
-            width: 80%;
-            max-width: 640px;
-            height: 480px;
+            flex: 1;
+            max-width: 90vw;
+            max-height: 50vh;
             background: #000;
             border: 3px solid #333;
             border-radius: 10px;
-            margin-bottom: 30px;
+            margin: 10px auto;
             position: relative;
             overflow: hidden;
+            min-height: 200px;
         }
         
         .preview-video {
@@ -45,21 +60,16 @@
         }
         
         .countdown-display {
-            font-size: 120px;
+            font-size: 80px;
             font-weight: bold;
             color: #ff4444;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            margin: 20px 0;
-            min-height: 140px;
+            margin: 10px 0;
+            min-height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-        
-        .countdown-message {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #333;
+            flex-shrink: 0;
         }
         
         .start-countdown-btn {
@@ -70,7 +80,9 @@
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            margin-top: 20px;
+            margin: 10px auto;
+            flex-shrink: 0;
+            max-width: 300px;
         }
         
         .start-countdown-btn:hover {
@@ -131,10 +143,9 @@
             <div id="flashOverlay" class="flash-overlay"></div>
         </div>
         
-        <div class="countdown-controls">
-            <div id="countdownDisplay" class="countdown-display"></div>
-            <button id="startCountdownBtn" class="start-countdown-btn">📸 Start Countdown</button>
-        </div>
+        <div id="countdownDisplay" class="countdown-display"></div>
+        
+        <button id="startCountdownBtn" class="start-countdown-btn">📸 Start Countdown</button>
         
         <div id="errorMessage" class="error-message" style="display: none;"></div>
         
@@ -322,7 +333,7 @@
             const countdownDisplay = document.getElementById('countdownDisplay');
             
             startBtn.disabled = false;
-            startBtn.textContent = 'Start Countdown';
+            startBtn.textContent = '📸 Start Countdown';
             countdownDisplay.textContent = '';
             
             if (countdownInterval) {
