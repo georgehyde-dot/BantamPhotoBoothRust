@@ -35,7 +35,7 @@ image = "0.25"
 # For defining async functions in traits
 async-trait = "0.1"
 
-rust-embed={"version" = "8.7.2", "features" = ["include-exclude"]}
+rust-embed={"version" = "8.7.2", "features" = ["include-exclude", "compression"]}
 axum-embed = "0.1.0"
 # libcamera = "0.4.0"
 
@@ -43,3 +43,4 @@ axum-server = { version = "0.6", features = ["tls-rustls"] }
 tokio-rustls = "0.25"
 rustls = "0.22"
 rustls-pemfile = "2.0"
+chrono = { version = "0.4", features = ["serde"] }

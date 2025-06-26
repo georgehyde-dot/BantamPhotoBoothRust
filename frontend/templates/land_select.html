@@ -5,15 +5,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Select Land</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .choice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .choice-button {
+            aspect-ratio: 1;
+            border: 3px solid #333;
+            border-radius: 10px;
+            background: #f5f5f5;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .choice-button:hover {
+            border-color: #4CAF50;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .choice-button:active {
+            transform: scale(0.95);
+        }
+        
+        .choice-image {
+            width: 100%;
+            height: 70%;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .choice-label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+        }
+        
+        .choice-button.loading .choice-image {
+            opacity: 0.5;
+        }
+        
+        .choice-button.loading::after {
+            content: "Loading...";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.9);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .choice-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+                padding: 15px;
+            }
+            
+            .choice-button {
+                min-height: 150px;
+            }
+            
+            .choice-label {
+                font-size: 14px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Choose Your Land</h1>
         <div class="choice-grid">
-            <button class="choice-button" data-id="land1" data-next-page="/select/companion">Land 1</button>
-            <button class="choice-button" data-id="land2" data-next-page="/select/companion">Land 2</button>
-            <button class="choice-button" data-id="land3" data-next-page="/select/companion">Land 3</button>
-            <button class="choice-button" data-id="land4" data-next-page="/select/companion">Land 4</button>
+            <button class="choice-button" data-id="land1" data-next-page="/select/companion">
+                <img src="/static/images/land1.jpg" alt="Land 1" class="choice-image" loading="lazy">
+                <div class="choice-label">Land 1</div>
+            </button>
+            <button class="choice-button" data-id="land2" data-next-page="/select/companion">
+                <img src="/static/images/land2.jpg" alt="Land 2" class="choice-image" loading="lazy">
+                <div class="choice-label">Land 2</div>
+            </button>
+            <button class="choice-button" data-id="land3" data-next-page="/select/companion">
+                <img src="/static/images/land3.jpg" alt="Land 3" class="choice-image" loading="lazy">
+                <div class="choice-label">Land 3</div>
+            </button>
+            <button class="choice-button" data-id="land4" data-next-page="/select/companion">
+                <img src="/static/images/land4.jpg" alt="Land 4" class="choice-image" loading="lazy">
+                <div class="choice-label">Land 4</div>
+            </button>
         </div>
     </div>
     <script src="/static/js/app.js"></script>

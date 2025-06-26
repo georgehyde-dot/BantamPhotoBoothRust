@@ -5,15 +5,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Select Companion</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .choice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .choice-button {
+            aspect-ratio: 1;
+            border: 3px solid #333;
+            border-radius: 10px;
+            background: #f5f5f5;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .choice-button:hover {
+            border-color: #4CAF50;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .choice-button:active {
+            transform: scale(0.95);
+        }
+        
+        .choice-image {
+            width: 100%;
+            height: 70%;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .choice-label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+        }
+        
+        .choice-button.loading .choice-image {
+            opacity: 0.5;
+        }
+        
+        .choice-button.loading::after {
+            content: "Loading...";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.9);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .choice-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+                padding: 15px;
+            }
+            
+            .choice-button {
+                min-height: 150px;
+            }
+            
+            .choice-label {
+                font-size: 14px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>Choose Your Companion</h1>
         <div class="choice-grid">
-            <button class="choice-button" data-id="companion1" data-next-page="/camera/countdown">Companion 1</button>
-            <button class="choice-button" data-id="companion2" data-next-page="/camera/countdown">Companion 2</button>
-            <button class="choice-button" data-id="companion3" data-next-page="/camera/countdown">Companion 3</button>
-            <button class="choice-button" data-id="companion4" data-next-page="/camera/countdown">Companion 4</button>
+            <button class="choice-button" data-id="companion1" data-next-page="/entry/names">
+                <img src="/static/images/companion1.jpg" alt="Companion 1" class="choice-image" loading="lazy">
+                <div class="choice-label">Companion 1</div>
+            </button>
+            <button class="choice-button" data-id="companion2" data-next-page="/entry/names">
+                <img src="/static/images/companion2.jpg" alt="Companion 2" class="choice-image" loading="lazy">
+                <div class="choice-label">Companion 2</div>
+            </button>
+            <button class="choice-button" data-id="companion3" data-next-page="/entry/names">
+                <img src="/static/images/companion3.jpg" alt="Companion 3" class="choice-image" loading="lazy">
+                <div class="choice-label">Companion 3</div>
+            </button>
+            <button class="choice-button" data-id="companion4" data-next-page="/entry/names">
+                <img src="/static/images/companion4.jpg" alt="Companion 4" class="choice-image" loading="lazy">
+                <div class="choice-label">Companion 4</div>
+            </button>
         </div>
     </div>
     <script src="/static/js/app.js"></script>

@@ -2,376 +2,386 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <title>Enter Names</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <style>
-        .keyboard-toggle {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+        
+        .header {
+            flex-shrink: 0;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .name-inputs {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 20px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        /* When keyboard is open, adjust the container */
+        .container.keyboard-open {
+            height: calc(100vh - 350px); /* Account for keyboard height */
+        }
+        
+        .name-input {
+            width: 100%;
+            padding: 20px;
+            font-size: 24px;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            background: white;
+            box-sizing: border-box;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 1;
+        }
+        
+        .name-input.active {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        }
+        
+        /* Hide non-active inputs when keyboard is open */
+        .container.keyboard-open .name-input:not(.active) {
+            opacity: 0.3;
+            transform: scale(0.9);
+        }
+        
+        .submit-section {
+            flex-shrink: 0;
+            margin-top: 20px;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 20px;
+            font-size: 20px;
             background: #4CAF50;
             color: white;
             border: none;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 24px;
+            border-radius: 10px;
             cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* Custom Keyboard Styles */
+        .custom-keyboard {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #f5f5f5;
+            border-top: 2px solid #ddd;
+            padding: 15px;
             z-index: 1000;
+            display: none;
+            height: 320px;
+            box-sizing: border-box;
         }
         
-        .keyboard-toggle:hover {
-            background: #45a049;
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            margin: 5px 0;
+            gap: 5px;
         }
         
-        /* Make input fields more touch-friendly */
-        .input-group input {
+        .key {
+            background: white;
+            border: 2px solid #ccc;
+            border-radius: 8px;
             padding: 15px;
             font-size: 18px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            min-height: 50px;
-            /* Ensure touch events work */
-            touch-action: manipulation;
-            user-select: text;
+            font-weight: bold;
+            min-width: 45px;
+            height: 60px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s ease;
         }
         
-        .input-group input:focus {
-            border-color: #4CAF50;
-            outline: none;
-            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+        .key:active {
+            background: #e0e0e0;
+            transform: scale(0.95);
         }
         
-        /* Debug styling to see touch areas */
-        .input-group {
-            margin: 20px 0;
-            position: relative;
+        .key.special {
+            background: #e8e8e8;
+            color: #666;
         }
         
-        .debug-info {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 10px;
-            font-size: 12px;
-            border-radius: 5px;
-            z-index: 1001;
-            max-width: 300px;
+        .key.wide {
+            flex: 2;
+            min-width: 100px;
+        }
+        
+        @media (max-width: 480px) {
+            .key {
+                min-width: 35px;
+                height: 50px;
+                padding: 10px;
+                font-size: 16px;
+            }
+            
+            .custom-keyboard {
+                height: 280px;
+            }
+            
+            .container.keyboard-open {
+                height: calc(100vh - 300px);
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Enter Your Names</h1>
-        <form id="namesForm">
-            <div class="input-group">
-                <label for="name1">Player 1 Name:</label>
-                <input type="text" id="name1" name="name1" required autocomplete="off">
-            </div>
-            <div class="input-group">
-                <label for="name2">Player 2 Name:</label>
-                <input type="text" id="name2" name="name2" autocomplete="off">
-            </div>
-            <button type="submit" class="action-button">Continue</button>
-        </form>
+        <div class="header">
+            <h1>Enter Your Names</h1>
+        </div>
         
-        <!-- Keyboard toggle button -->
-        <button id="keyboardToggle" class="keyboard-toggle">⌨️</button>
+        <div class="name-inputs">
+            <input 
+                type="text" 
+                id="firstName"
+                class="name-input" 
+                placeholder="Tap to enter first name"
+                readonly
+                maxlength="30"
+            >
+            <input 
+                type="text" 
+                id="secondName"
+                class="name-input" 
+                placeholder="Tap to enter second name (optional)"
+                readonly
+                maxlength="30"
+            >
+        </div>
         
-        <!-- Debug info -->
-        <div id="debugInfo" class="debug-info" style="display: none;"></div>
+        <div class="submit-section">
+            <button id="submitBtn" class="submit-btn" disabled>Continue to Photo</button>
+        </div>
+    </div>
+    
+    <!-- Custom Keyboard -->
+    <div id="customKeyboard" class="custom-keyboard">
+        <div class="keyboard-row">
+            <button type="button" class="key" data-key="Q">Q</button>
+            <button type="button" class="key" data-key="W">W</button>
+            <button type="button" class="key" data-key="E">E</button>
+            <button type="button" class="key" data-key="R">R</button>
+            <button type="button" class="key" data-key="T">T</button>
+            <button type="button" class="key" data-key="Y">Y</button>
+            <button type="button" class="key" data-key="U">U</button>
+            <button type="button" class="key" data-key="I">I</button>
+            <button type="button" class="key" data-key="O">O</button>
+            <button type="button" class="key" data-key="P">P</button>
+        </div>
+        <div class="keyboard-row">
+            <button type="button" class="key" data-key="A">A</button>
+            <button type="button" class="key" data-key="S">S</button>
+            <button type="button" class="key" data-key="D">D</button>
+            <button type="button" class="key" data-key="F">F</button>
+            <button type="button" class="key" data-key="G">G</button>
+            <button type="button" class="key" data-key="H">H</button>
+            <button type="button" class="key" data-key="J">J</button>
+            <button type="button" class="key" data-key="K">K</button>
+            <button type="button" class="key" data-key="L">L</button>
+        </div>
+        <div class="keyboard-row">
+            <button type="button" class="key special" data-key="shift">⇧</button>
+            <button type="button" class="key" data-key="Z">Z</button>
+            <button type="button" class="key" data-key="X">X</button>
+            <button type="button" class="key" data-key="C">C</button>
+            <button type="button" class="key" data-key="V">V</button>
+            <button type="button" class="key" data-key="B">B</button>
+            <button type="button" class="key" data-key="N">N</button>
+            <button type="button" class="key" data-key="M">M</button>
+            <button type="button" class="key special" data-key="backspace">⌫</button>
+        </div>
+        <div class="keyboard-row">
+            <button type="button" class="key special wide" data-key=" ">Space</button>
+            <button type="button" class="key special" data-key="clear">Clear</button>
+            <button type="button" class="key special" data-key="done">Done</button>
+        </div>
     </div>
     
     <script>
-        let keyboardVisible = false;
-        let currentInput = null;
-        let debugMode = true; // Set to false to hide debug info
+        let activeInput = null;
+        let isShiftPressed = false;
         
-        function updateDebug(message) {
-            if (debugMode) {
-                const debugDiv = document.getElementById('debugInfo');
-                debugDiv.style.display = 'block';
-                debugDiv.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '<br>';
-                // Keep only last 10 messages
-                const lines = debugDiv.innerHTML.split('<br>');
-                if (lines.length > 10) {
-                    debugDiv.innerHTML = lines.slice(-10).join('<br>');
-                }
-                console.log('DEBUG:', message);
-            }
-        }
-        
-        // Enhanced keyboard control functions
-        async function toggleKeyboard() {
-            updateDebug('Toggling keyboard...');
-            try {
-                const response = await fetch('/api/keyboard/toggle', { method: 'POST' });
-                const result = await response.text();
-                keyboardVisible = result === 'shown';
-                updateDebug('Keyboard toggle result: ' + result);
-                return result;
-            } catch (err) {
-                updateDebug('Keyboard toggle failed: ' + err);
-                return 'error';
-            }
-        }
-        
-        async function showKeyboard() {
-            if (!keyboardVisible) {
-                updateDebug('Showing keyboard...');
-                try {
-                    await fetch('/api/keyboard/show', { method: 'POST' });
-                    keyboardVisible = true;
-                    updateDebug('Keyboard shown');
-                } catch (err) {
-                    updateDebug('Keyboard show failed: ' + err);
-                }
-            } else {
-                updateDebug('Keyboard already visible');
-            }
-        }
-        
-        async function hideKeyboard() {
-            if (keyboardVisible) {
-                updateDebug('Hiding keyboard...');
-                try {
-                    await fetch('/api/keyboard/hide', { method: 'POST' });
-                    keyboardVisible = false;
-                    updateDebug('Keyboard hidden');
-                } catch (err) {
-                    updateDebug('Keyboard hide failed: ' + err);
-                }
-            } else {
-                updateDebug('Keyboard already hidden');
-            }
-        }
-        
-        // Enhanced input field event handling
-        function setupInputEvents() {
-            const inputs = document.querySelectorAll('input[type="text"]');
-            updateDebug('Setting up events for ' + inputs.length + ' inputs');
-            
-            inputs.forEach((input, index) => {
-                updateDebug('Setting up input ' + index + ' (' + input.id + ')');
-                
-                // Remove any existing event listeners by cloning the element
-                const newInput = input.cloneNode(true);
-                input.parentNode.replaceChild(newInput, input);
-                
-                // Touch events - most important for kiosk
-                newInput.addEventListener('touchstart', (e) => {
-                    updateDebug('TOUCHSTART on ' + newInput.id);
-                    e.preventDefault(); // Prevent default touch behavior
-                    currentInput = newInput;
-                    newInput.focus();
-                    showKeyboard();
-                }, { passive: false });
-                
-                newInput.addEventListener('touchend', (e) => {
-                    updateDebug('TOUCHEND on ' + newInput.id);
-                    e.preventDefault();
-                    // Ensure focus and keyboard show
-                    setTimeout(() => {
-                        newInput.focus();
-                        showKeyboard();
-                    }, 50);
-                }, { passive: false });
-                
-                // Click events for mouse/desktop testing
-                newInput.addEventListener('click', (e) => {
-                    updateDebug('CLICK on ' + newInput.id);
-                    currentInput = newInput;
-                    showKeyboard();
+        // Handle input clicks
+        document.querySelectorAll('.name-input').forEach(input => {
+            input.addEventListener('click', function() {
+                // Remove active class from all inputs
+                document.querySelectorAll('.name-input').forEach(inp => {
+                    inp.classList.remove('active');
                 });
                 
-                // Focus events
-                newInput.addEventListener('focus', (e) => {
-                    updateDebug('FOCUS on ' + newInput.id);
-                    currentInput = newInput;
-                    showKeyboard();
-                });
+                // Add active class to clicked input
+                this.classList.add('active');
+                activeInput = this;
                 
-                // Blur events with delay
-                newInput.addEventListener('blur', (e) => {
-                    updateDebug('BLUR on ' + newInput.id);
-                    setTimeout(() => {
-                        if (!document.querySelector('input:focus')) {
-                            updateDebug('No input focused, hiding keyboard');
-                            hideKeyboard();
-                            currentInput = null;
-                        }
-                    }, 300);
-                });
+                // Show keyboard and adjust container
+                document.getElementById('customKeyboard').style.display = 'block';
+                document.querySelector('.container').classList.add('keyboard-open');
+            });
+        });
+        
+        // Handle keyboard keys
+        document.querySelectorAll('.key').forEach(key => {
+            key.addEventListener('click', function() {
+                if (!activeInput) return;
                 
-                // Key events - handle Enter key properly
-                newInput.addEventListener('keydown', (e) => {
-                    updateDebug('KEYDOWN: ' + e.key + ' on ' + newInput.id);
-                    
-                    if (e.key === 'Enter') {
-                        updateDebug('Enter key pressed');
-                        e.preventDefault();
-                        e.stopPropagation();
+                const keyValue = this.dataset.key;
+                
+                switch(keyValue) {
+                    case 'backspace':
+                        activeInput.value = activeInput.value.slice(0, -1);
+                        break;
                         
-                        const allInputs = Array.from(document.querySelectorAll('input[type="text"]'));
-                        const currentIndex = allInputs.indexOf(newInput);
+                    case 'clear':
+                        activeInput.value = '';
+                        break;
                         
-                        if (currentIndex < allInputs.length - 1) {
-                            // Move to next input
-                            updateDebug('Moving to next input');
-                            allInputs[currentIndex + 1].focus();
-                        } else {
-                            // Last input - submit form
-                            updateDebug('Last input, submitting form');
-                            hideKeyboard().then(() => {
-                                setTimeout(() => {
-                                    document.getElementById('namesForm').dispatchEvent(new Event('submit', { bubbles: true }));
-                                }, 200);
-                            });
+                    case 'shift':
+                        isShiftPressed = !isShiftPressed;
+                        this.style.background = isShiftPressed ? '#4CAF50' : '#e8e8e8';
+                        this.style.color = isShiftPressed ? 'white' : '#666';
+                        updateKeyboardCase();
+                        return;
+                        
+                    case 'done':
+                        closeKeyboard();
+                        break;
+                        
+                    case ' ':
+                        activeInput.value += ' ';
+                        break;
+                        
+                    default:
+                        let char = keyValue;
+                        if (!isShiftPressed) {
+                            char = char.toLowerCase();
                         }
-                    }
-                });
+                        activeInput.value += char;
+                        
+                        if (isShiftPressed && keyValue.match(/[A-Z]/)) {
+                            isShiftPressed = false;
+                            document.querySelector('[data-key="shift"]').style.background = '#e8e8e8';
+                            document.querySelector('[data-key="shift"]').style.color = '#666';
+                            updateKeyboardCase();
+                        }
+                        break;
+                }
                 
-                // Input event to track typing
-                newInput.addEventListener('input', (e) => {
-                    updateDebug('INPUT event on ' + newInput.id + ': ' + newInput.value);
-                });
+                updateSubmitButton();
+            });
+        });
+        
+        function closeKeyboard() {
+            document.getElementById('customKeyboard').style.display = 'none';
+            document.querySelector('.container').classList.remove('keyboard-open');
+            if (activeInput) {
+                activeInput.classList.remove('active');
+                activeInput = null;
+            }
+        }
+        
+        function updateKeyboardCase() {
+            document.querySelectorAll('.key').forEach(key => {
+                const keyValue = key.dataset.key;
+                if (keyValue && keyValue.match(/[A-Z]/)) {
+                    key.textContent = isShiftPressed ? keyValue : keyValue.toLowerCase();
+                }
             });
         }
         
-        // Manual keyboard toggle
-        document.getElementById('keyboardToggle').addEventListener('click', (e) => {
-            updateDebug('Keyboard toggle button clicked');
-            e.preventDefault();
-            e.stopPropagation();
-            toggleKeyboard();
-        });
-        
-        // Handle clicks outside input areas
-        document.addEventListener('click', (e) => {
-            updateDebug('Document click on: ' + e.target.tagName + ' ' + (e.target.id || e.target.className));
+        function updateSubmitButton() {
+            const firstName = document.getElementById('firstName').value.trim();
+            const submitBtn = document.getElementById('submitBtn');
             
-            if (!e.target.matches('input[type="text"], .keyboard-toggle') &&
-                !e.target.closest('.keyboard-toggle')) {
-                
-                setTimeout(() => {
-                    if (!document.querySelector('input:focus')) {
-                        updateDebug('Hiding keyboard due to outside click');
-                        hideKeyboard();
-                        currentInput = null;
-                    }
-                }, 100);
+            if (firstName.length > 0) {
+                submitBtn.disabled = false;
+                submitBtn.style.background = '#4CAF50';
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.style.background = '#ccc';
             }
-        });
+        }
         
-        // Handle touches outside input areas
-        document.addEventListener('touchstart', (e) => {
-            updateDebug('Document touchstart on: ' + e.target.tagName + ' ' + (e.target.id || e.target.className));
+        // Handle submit
+        document.getElementById('submitBtn').addEventListener('click', async function() {
+            const firstName = document.getElementById('firstName').value.trim();
+            const secondName = document.getElementById('secondName').value.trim();
             
-            if (!e.target.matches('input[type="text"], .keyboard-toggle') &&
-                !e.target.closest('.keyboard-toggle')) {
-                
-                setTimeout(() => {
-                    if (!document.querySelector('input:focus')) {
-                        updateDebug('Hiding keyboard due to outside touch');
-                        hideKeyboard();
-                        currentInput = null;
-                    }
-                }, 200);
-            }
-        });
-        
-        // Form submission
-        document.getElementById('namesForm').addEventListener('submit', async (e) => {
-            updateDebug('Form submit event triggered');
-            e.preventDefault();
-            e.stopPropagation();
+            if (!firstName) return;
             
-            // Always hide keyboard first
-            await hideKeyboard();
+            this.disabled = true;
+            this.textContent = 'Submitting...';
             
-            const names = [
-                document.getElementById('name1').value.trim(),
-                document.getElementById('name2').value.trim()
-            ].filter(name => name !== '');
-            
-            updateDebug('Submitting names: ' + JSON.stringify(names));
-            
-            if (names.length === 0) {
-                alert('Please enter at least one name');
-                return;
+            const names = [firstName];
+            if (secondName) {
+                names.push(secondName);
             }
             
             try {
                 const response = await fetch('/api/session/submit_names', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ names })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ names: names })
                 });
                 
                 if (response.ok) {
-                    updateDebug('Names submitted successfully, navigating...');
-                    // Extra delay to ensure keyboard is fully hidden
-                    setTimeout(() => {
-                        window.location.href = '/camera/countdown';
-                    }, 500);
+                    window.location.href = '/camera/countdown';
                 } else {
-                    updateDebug('Failed to submit names: ' + response.status);
-                    alert('Failed to submit names');
+                    throw new Error('Failed to submit names');
                 }
             } catch (error) {
-                updateDebug('Network error: ' + error.message);
-                alert('Network error: ' + error.message);
+                console.error('Error:', error);
+                this.disabled = false;
+                this.textContent = 'Continue to Photo';
+                alert('Error submitting names. Please try again.');
             }
         });
         
-        // Initialize when page loads
-        function initializePage() {
-            updateDebug('Initializing page...');
-            setupInputEvents();
-            
-            // Focus first input to test
-            setTimeout(() => {
-                const firstInput = document.getElementById('name1');
-                if (firstInput) {
-                    updateDebug('Focusing first input for testing');
-                    firstInput.focus();
-                }
-            }, 1000);
-        }
-        
-        // Multiple initialization attempts
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializePage);
-        } else {
-            initializePage();
-        }
-        
-        // Also try after a short delay
-        setTimeout(initializePage, 100);
-        
-        // Prevent zoom on double tap
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', (e) => {
-            const now = new Date().getTime();
-            if (now - lastTouchEnd <= 300) {
-                e.preventDefault();
+        // Close keyboard when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.custom-keyboard') && !e.target.closest('.name-input')) {
+                closeKeyboard();
             }
-            lastTouchEnd = now;
-        }, false);
+        });
         
-        // Prevent default touch behaviors that might interfere
-        document.addEventListener('touchmove', (e) => {
-            // Allow scrolling but prevent other gestures
-            if (e.touches.length > 1) {
-                e.preventDefault();
-            }
-        }, { passive: false });
+        // Initialize
+        updateSubmitButton();
     </script>
 </body>
 </html>

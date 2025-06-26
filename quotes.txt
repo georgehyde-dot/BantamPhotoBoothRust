@@ -1,0 +1,300 @@
+--HEADER 111
+This town ain't big enough for the two of us.
+A man's gotta do what a man's gotta do.
+Always drink upstream from the herd.
+
+--HEADER 112
+Ride 'em, cowboy!
+Talk low, talk slow, and don't say too much.
+Courage is being scared to death but saddling up anyway.
+
+--HEADER 113
+Get along, little dogies.
+This ain't my first rodeo, you know.
+It's a hard country for old men.
+
+--HEADER 114
+Never miss a good chance to shut up.
+May your belly never grumble, may your heart never ache.
+Faster than a tumbleweed in a dust storm, I reckon.
+
+--HEADER 121
+Head 'em up, move 'em out!
+He's as slippery as a snake in a wagon rut.
+Where the West was won, and the East was lost.
+
+--HEADER 122
+Home, home on the range.
+Life is tough, but it's tougher if you're stupid.
+A cowboy is a man with guts and a horse.
+
+--HEADER 123
+When you get to the end of your rope, tie a knot and hang on.
+Don't squat with your spurs on.
+Let's mosey on down the trail, partner.
+
+--HEADER 124
+There's a new sheriff in town.
+Reach for the sky!
+Well, I'll be hornswoggled!
+
+--HEADER 131
+The trail is long, but the company's good.
+It's a hard country for old men.
+Ride 'em, cowboy!
+
+--HEADER 132
+May your belly never grumble, may your heart never ache.
+Courage is being scared to death but saddling up anyway.
+
+--HEADER 133
+A man's gotta do what a man's gotta do.
+Talk low, talk slow, and don't say too much.
+Faster than a tumbleweed in a dust storm, I reckon.
+
+--HEADER 134
+Get along, little dogies.
+This town ain't big enough for the two of us.
+
+--HEADER 141
+Never miss a good chance to shut up.
+Always drink upstream from the herd.
+He's as slippery as a snake in a wagon rut.
+
+--HEADER 142
+This ain't my first rodeo, you know.
+A cowboy is a man with guts and a horse.
+
+--HEADER 143
+There's a new sheriff in town.
+Where the West was won, and the East was lost.
+Home, home on the range.
+
+--HEADER 144
+Head 'em up, move 'em out!
+When you get to the end of your rope, tie a knot and hang on.
+Life is tough, but it's tougher if you're stupid.
+
+--HEADER 211
+Don't squat with your spurs on.
+Well, I'll be hornswoggled!
+Let's mosey on down the trail, partner.
+
+--HEADER 212
+It's a hard country for old men.
+May your belly never grumble, may your heart never ache.
+
+--HEADER 213
+A man's gotta do what a man's gotta do.
+Ride 'em, cowboy!
+Get along, little dogies.
+
+--HEADER 214
+Talk low, talk slow, and don't say too much.
+Never miss a good chance to shut up.
+
+--HEADER 221
+This town ain't big enough for the two of us.
+Faster than a tumbleweed in a dust storm, I reckon.
+Always drink upstream from the herd.
+
+--HEADER 222
+Courage is being scared to death but saddling up anyway.
+A cowboy is a man with guts and a horse.
+
+--HEADER 223
+He's as slippery as a snake in a wagon rut.
+There's a new sheriff in town.
+This ain't my first rodeo, you know.
+
+--HEADER 224
+Head 'em up, move 'em out!
+Life is tough, but it's tougher if you're stupid.
+Home, home on the range.
+
+--HEADER 231
+Where the West was won, and the East was lost.
+Don't squat with your spurs on.
+
+--HEADER 232
+When you get to the end of your rope, tie a knot and hang on.
+Let's mosey on down the trail, partner.
+The trail is long, but the company's good.
+
+--HEADER 233
+Reach for the sky!
+Well, I'll be hornswoggled!
+
+--HEADER 234
+It's a hard country for old men.
+May your belly never grumble, may your heart never ache.
+A man's gotta do what a man's gotta do.
+
+--HEADER 241
+Ride 'em, cowboy!
+Get along, little dogies.
+
+--HEADER 242
+Talk low, talk slow, and don't say too much.
+Faster than a tumbleweed in a dust storm, I reckon.
+This town ain't big enough for the two of us.
+
+--HEADER 243
+Never miss a good chance to shut up.
+Courage is being scared to death but saddling up anyway.
+Always drink upstream from the herd.
+
+--HEADER 244
+He's as slippery as a snake in a wagon rut.
+A cowboy is a man with guts and a horse.
+
+--HEADER 311
+There's a new sheriff in town.
+This ain't my first rodeo, you know.
+Home, home on the range.
+
+--HEADER 312
+Head 'em up, move 'em out!
+Where the West was won, and the East was lost.
+
+--HEADER 313
+Life is tough, but it's tougher if you're stupid.
+When you get to the end of your rope, tie a knot and hang on.
+The trail is long, but the company's good.
+
+--HEADER 314
+Reach for the sky!
+Don't squat with your spurs on.
+
+--HEADER 321
+Well, I'll be hornswoggled!
+Let's mosey on down the trail, partner.
+It's a hard country for old men.
+
+--HEADER 322
+A man's gotta do what a man's gotta do.
+May your belly never grumble, may your heart never ache.
+
+--HEADER 323
+Ride 'em, cowboy!
+Talk low, talk slow, and don't say too much.
+Get along, little dogies.
+
+--HEADER 324
+Never miss a good chance to shut up.
+This town ain't big enough for the two of us.
+
+--HEADER 331
+Faster than a tumbleweed in a dust storm, I reckon.
+Courage is being scared to death but saddling up anyway.
+He's as slippery as a snake in a wagon rut.
+
+--HEADER 332
+A cowboy is a man with guts and a horse.
+Always drink upstream from the herd.
+
+--HEADER 333
+This ain't my first rodeo, you know.
+There's a new sheriff in town.
+Home, home on the range.
+
+--HEADER 334
+Head 'em up, move 'em out!
+Life is tough, but it's tougher if you're stupid.
+
+--HEADER 341
+Where the West was won, and the East was lost.
+When you get to the end of your rope, tie a knot and hang on.
+The trail is long, but the company's good.
+
+--HEADER 342
+Reach for the sky!
+Don't squat with your spurs on.
+
+--HEADER 343
+Well, I'll be hornswoggled!
+Let's mosey on down the trail, partner.
+A man's gotta do what a man's gotta do.
+
+--HEADER 344
+It's a hard country for old men.
+May your belly never grumble, may your heart never ache.
+
+--HEADER 411
+Ride 'em, cowboy!
+Talk low, talk slow, and don't say too much.
+Never miss a good chance to shut up.
+
+--HEADER 412
+Get along, little dogies.
+This town ain't big enough for the two of us.
+
+--HEADER 413
+Faster than a tumbleweed in a dust storm, I reckon.
+Always drink upstream from the herd.
+Courage is being scared to death but saddling up anyway.
+
+--HEADER 414
+He's as slippery as a snake in a wagon rut.
+A cowboy is a man with guts and a horse.
+
+--HEADER 421
+There's a new sheriff in town.
+This ain't my first rodeo, you know.
+
+--HEADER 422
+Home, home on the range.
+Head 'em up, move 'em out!
+Where the West was won, and the East was lost.
+
+--HEADER 423
+Life is tough, but it's tougher if you're stupid.
+When you get to the end of your rope, tie a knot and hang on.
+
+--HEADER 424
+The trail is long, but the company's good.
+Reach for the sky!
+Don't squat with your spurs on.
+
+--HEADER 431
+Well, I'll be hornswoggled!
+Let's mosey on down the trail, partner.
+
+--HEADER 432
+It's a hard country for old men.
+A man's gotta do what a man's gotta do.
+May your belly never grumble, may your heart never ache.
+
+--HEADER 433
+Ride 'em, cowboy!
+Get along, little dogies.
+
+--HEADER 434
+Talk low, talk slow, and don't say too much.
+Never miss a good chance to shut up.
+This town ain't big enough for the two of us.
+
+--HEADER 441
+Faster than a tumbleweed in a dust storm, I reckon.
+Always drink upstream from the herd.
+
+--HEADER 442
+Courage is being scared to death but saddling up anyway.
+He's as slippery as a snake in a wagon rut.
+A cowboy is a man with guts and a horse.
+
+--HEADER 443
+There's a new sheriff in town.
+This ain't my first rodeo, you know.
+
+--HEADER 444
+Home, home on the range.
+Head 'em up, move 'em out!
+Where the West was won, and the East was lost.
+
+--HEADER general
+Life is tough, but it's tougher if you're stupid.
+When you get to the end of your rope, tie a knot and hang on.
+A cowboy is a man with guts and a horse.
+Let's mosey on down the trail, partner.
+This ain't my first rodeo, you know.

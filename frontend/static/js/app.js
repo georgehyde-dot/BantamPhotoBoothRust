@@ -1,107 +1,66 @@
-// A helper function to make API calls for selections
-async function handleSelection(endpoint, selectionId, nextPage) {
-    try {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: selectionId })
-        });
-
-        if (response.ok) {
-            window.location.href = nextPage;
-        } else {
-            alert(`Error: Could not save selection. Server responded with status ${response.status}.`);
-        }
-    } catch (error) {
-        console.error(`Failed to post selection to ${endpoint}:`, error);
-        alert('Failed to connect to the backend.');
-    }
-}
-
-
-document.addEventListener('DOMContentLoaded', () => {
-    // --- Start Page Logic ---
-    const startButton = document.getElementById('startButton');
-    if (startButton) {
-        startButton.addEventListener('click', async () => {
-            try {
-                const response = await fetch('/api/session/start', { method: 'POST' });
-                if (response.ok) {
-                    const data = await response.json();
-                    // Use the redirect URL from the server response
-                    window.location.href = data.redirect || '/entry/names';
-                } else {
-                    alert('Error starting session.');
-                }
-            } catch (error) {
-                console.error('Failed to start session:', error);
-                alert('Failed to connect to the backend.');
-            }
-        });
-    }
-
-    // --- Name Entry Form Logic ---
-    const nameForm = document.getElementById('nameForm');
-    if (nameForm) {
-        nameForm.addEventListener('submit', async (e) => {
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle choice buttons - SIMPLIFIED VERSION
+    document.querySelectorAll('.choice-button').forEach(button => {
+        button.addEventListener('click', async (e) => {
             e.preventDefault();
             
-            // Collect all non-empty names
-            const names = [];
-            for (let i = 1; i <= 5; i++) {
-                const nameInput = document.getElementById(`name${i}`);
-                if (nameInput && nameInput.value.trim()) {
-                    names.push(nameInput.value.trim());
-                }
-            }
-            
-            if (names.length === 0) {
-                alert('Please enter at least one name.');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/session/submit_names', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ names: names })
-                });
-                
-                if (response.ok) {
-                    // TODO: Navigate to next page (weapon select, etc.)
-                    window.location.href = '/select/weapon';
-                } else {
-                    alert('Error submitting names.');
-                }
-            } catch (error) {
-                console.error('Failed to submit names:', error);
-                alert('Failed to connect to the backend.');
-            }
-        });
-    }
-
-    // --- Generic Choice Button Logic ---
-    // This will work for weapon, land, and companion screens if they use the same class and data attributes.
-    const choiceButtons = document.querySelectorAll('.choice-button');
-    choiceButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const selectionId = button.dataset.id;
+            const id = button.dataset.id;
             const nextPage = button.dataset.nextPage;
             
-            let apiEndpoint = '';
-            if (selectionId.startsWith('weapon')) {
+            // Immediate visual feedback
+            button.style.transform = 'scale(0.95)';
+            button.style.opacity = '0.7';
+            
+            // Determine API endpoint based on current page
+            let apiEndpoint;
+            if (window.location.pathname.includes('weapon')) {
                 apiEndpoint = '/api/session/select_weapon';
-            } else if (selectionId.startsWith('land')) {
+            } else if (window.location.pathname.includes('land')) {
                 apiEndpoint = '/api/session/select_land';
-            } else if (selectionId.startsWith('companion')) {
+            } else if (window.location.pathname.includes('companion')) {
                 apiEndpoint = '/api/session/select_companion';
             }
-
+            
             if (apiEndpoint) {
-                handleSelection(apiEndpoint, selectionId, nextPage);
+                // Fire and forget API call - don't wait for response
+                fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                }).catch(err => console.warn('Selection API failed:', err));
             }
+            
+            // Navigate immediately - don't wait for API
+            setTimeout(() => {
+                window.location.href = nextPage;
+            }, 100); // Minimal delay for visual feedback
         });
     });
-
-    // TODO: Add event listeners for other pages like name entry, countdown, etc.
+    
+    // Simplified image error handling
+    document.querySelectorAll('.choice-image').forEach(img => {
+        img.addEventListener('error', function() {
+            this.style.background = '#ddd';
+            this.alt = 'Image not available';
+        });
+    });
+    
+    // Handle start button
+    const startButton = document.getElementById('startButton');
+    if (startButton) {
+        startButton.addEventListener('click', async function() {
+            this.style.opacity = '0.7';
+            
+            // Fire and forget
+            fetch('/api/session/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).catch(err => console.warn('Start session API failed:', err));
+            
+            // Navigate immediately
+            setTimeout(() => {
+                window.location.href = '/select/weapon';
+            }, 100);
+        });
+    }
 });

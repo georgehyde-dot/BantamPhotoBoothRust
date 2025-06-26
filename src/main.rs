@@ -15,7 +15,8 @@ use rust_embed::RustEmbed;
 #[include = "*.html"]
 #[include = "static/css/*.css"]
 #[include = "static/js/*.js"]
-#[include = "images/*"]
+#[include = "static/images/*.jpg"]
+#[include = "static/images/*.png"]
 struct Assets;
 
 use std::net::SocketAddr;
@@ -33,12 +34,15 @@ use std::path::PathBuf;
 mod camera;
 mod handlers;
 mod session;
+mod printer;
+mod session_logger;
 
-/// AppState holds the shared state for our application, including the
-/// current photo booth session and the camera instance.
+/// AppState holds the shared state for our application
 pub struct AppState {
     current_session: Mutex<Option<session::PhotoSession>>,
     active_camera: Arc<dyn camera::Camera + Send + Sync>,
+    active_printer: Arc<dyn printer::Printer + Send + Sync>,
+    session_logger: Arc<dyn session_logger::SessionLogger + Send + Sync>,
     session_count: Mutex<u32>,
 }
 
@@ -108,6 +112,60 @@ async fn debug_photo_status() -> Json<serde_json::Value> {
     Json(response)
 }
 
+// Debug endpoint to check printer status
+async fn debug_printer_status(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
+    let printer_ready = state.active_printer.is_ready().await;
+    let printer_status = state.active_printer.get_status().await;
+    
+    let mut response = serde_json::json!({
+        "printer_type": state.active_printer.type_name(),
+        "is_ready": printer_ready,
+    });
+    
+    match printer_status {
+        Ok(status) => {
+            response["status"] = serde_json::json!({
+                "is_online": status.is_online,
+                "paper_level": status.paper_level,
+                "toner_level": status.toner_level,
+                "error_message": status.error_message,
+            });
+        }
+        Err(e) => {
+            response["status_error"] = serde_json::Value::String(e.to_string());
+        }
+    }
+    
+    Json(response)
+}
+
+async fn serve_image(axum::extract::Path(filename): axum::extract::Path<String>) -> Result<Response<Body>, StatusCode> {
+    let image_path = format!("static/images/{}", filename);
+    
+    match Assets::get(&image_path) {
+        Some(content) => {
+            let content_type = if filename.ends_with(".jpg") || filename.ends_with(".jpeg") {
+                "image/jpeg"
+            } else if filename.ends_with(".png") {
+                "image/png"
+            } else {
+                "application/octet-stream"
+            };
+            
+            // Clone the data to avoid lifetime issues
+            let image_data = content.data.to_vec();
+            
+            Ok(Response::builder()
+                .header(header::CONTENT_TYPE, content_type)
+                .header(header::CACHE_CONTROL, "public, max-age=86400") // Cache for 24 hours
+                .header("ETag", format!("\"{}\"", filename)) // Add ETag for better caching
+                .body(Body::from(image_data))
+                .unwrap())
+        }
+        None => Err(StatusCode::NOT_FOUND)
+    }
+}
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::registry()
@@ -140,10 +198,28 @@ async fn main() {
     
     info!("Using camera type: {}", cam.type_name());
 
+    let printer = match printer::new_printer("brother-hl-l2405w").await {
+        Ok(printer) => {
+            info!("Using Brother HL-L2405W printer");
+            printer
+        }
+        Err(_) => {
+            warn!("Brother printer failed to initialize, using mock printer");
+            printer::new_printer("mock").await
+                .expect("Failed to initialize mock printer")
+        }
+    };
+    
+    info!("Using printer type: {}", printer.type_name());
+    let logger = session_logger::new_logger("csv").await
+        .expect("Failed to initialize session logger");  
+
     let shared_state = Arc::new(AppState {
         current_session: Mutex::new(None),
         active_camera: cam,
+        active_printer: printer,
         session_count: Mutex::new(0),
+        session_logger: logger,
     });
 
     let app = Router::new()
@@ -157,10 +233,12 @@ async fn main() {
         .route("/api/camera/start_countdown", post(handlers::start_countdown))
         .route("/api/camera/retake", post(handlers::retake_photo))
         .route("/api/photo/latest", get(serve_latest_photo))
+        .route("/api/session/status", get(handlers::get_session_status))
         
         // Debug routes
         .route("/debug/files", get(handlers::list_embedded_files))
         .route("/debug/photo", get(debug_photo_status))
+        .route("/debug/printer", get(debug_printer_status))
         
         // HTML page routes
         .route("/start", get( || handlers::serve_html("templates/start.html") ))
@@ -179,9 +257,7 @@ async fn main() {
         .route("/", get(|| handlers::serve_html("templates/start.html")))
         
         // Static Files, embedded in binary (catch-all, must be very last)
-        .route("/api/keyboard/toggle", post(handlers::toggle_keyboard))
-        .route("/api/keyboard/show", post(handlers::show_keyboard))
-        .route("/api/keyboard/hide", post(handlers::hide_keyboard))
+        .route("/api/printer/print_photo", post(handlers::print_photo))
         .fallback_service(ServeEmbed::<Assets>::new())
         
         // Provide the shared state to all handlers.

@@ -7,7 +7,6 @@ use axum::{
 use serde::Deserialize;
 use std::sync::{Arc, Mutex};
 use tracing::{error, info};
-use tokio::process::Command;
 
 pub async fn serve_html(filename: &str) -> impl IntoResponse {
     match Assets::get(filename) {
@@ -109,6 +108,14 @@ pub async fn start_countdown(State(state): State<Arc<AppState>>) -> Result<Json<
     match state.active_camera.take_photo_to_file().await {
         Ok(photo_path) => {
             info!("Photo captured successfully to: {}", photo_path);
+            
+            // Update session with photo path
+            let mut session_guard = state.current_session.lock().unwrap();
+            if let Some(session) = session_guard.as_mut() {
+                session.photo_path = Some(photo_path.clone());
+            }
+            drop(session_guard);
+            
             Ok(Json(serde_json::json!({
                 "status": "success",
                 "photo_path": photo_path
@@ -132,9 +139,57 @@ pub async fn start_countdown(State(state): State<Arc<AppState>>) -> Result<Json<
     }
 }
 
-pub async fn retake_photo(state: State<Arc<AppState>>) -> impl IntoResponse {
-    info!("Retaking photo.");
-    start_countdown(state).await
+pub async fn retake_photo(State(state): State<Arc<AppState>>) -> Result<Json<serde_json::Value>, StatusCode> {
+    info!("Retake photo requested.");
+    
+    // Check if retakes are allowed
+    let mut session_guard = state.current_session.lock().unwrap();
+    if let Some(session) = session_guard.as_mut() {
+        if !session.can_retake() {
+            drop(session_guard);
+            return Ok(Json(serde_json::json!({
+                "status": "error",
+                "message": "No retakes remaining. Please continue with your current photo.",
+                "redirect": "/entry/email"
+            })));
+        }
+        
+        // Use up a retake
+        session.use_retake();
+        info!("Retake used. Remaining retakes: {}", session.max_retakes - session.retakes_used);
+    } else {
+        drop(session_guard);
+        error!("Retake attempted with no active session.");
+        return Err(StatusCode::CONFLICT);
+    }
+    drop(session_guard);
+    
+    // Return success - frontend will redirect to countdown
+    Ok(Json(serde_json::json!({
+        "status": "success",
+        "message": "Retake allowed",
+        "redirect": "/camera/countdown"
+    })))
+}
+
+// New endpoint to get session status
+pub async fn get_session_status(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
+    let session_guard = state.current_session.lock().unwrap();
+    if let Some(session) = session_guard.as_ref() {
+        Json(serde_json::json!({
+            "has_session": true,
+            "can_retake": session.can_retake(),
+            "retakes_used": session.retakes_used,
+            "max_retakes": session.max_retakes
+        }))
+    } else {
+        Json(serde_json::json!({
+            "has_session": false,
+            "can_retake": false,
+            "retakes_used": 0,
+            "max_retakes": 0
+        }))
+    }
 }
 
 #[derive(Deserialize)]
@@ -143,7 +198,7 @@ pub struct EmailPayload {
 }
 
 pub async fn submit_email(
-    State(state): State<Arc<AppState>>,
+    State(_state): State<Arc<AppState>>,
     Json(payload): Json<serde_json::Value>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     info!("Email submitted: {:?}", payload);
@@ -159,58 +214,15 @@ pub async fn submit_email(
     })))
 }
 
-// Keyboard control handlers
-pub async fn toggle_keyboard() -> impl IntoResponse {
-    info!("API: Toggle keyboard called");
+// Printer handler (placeholder implementation)
+pub async fn print_photo(State(_state): State<Arc<AppState>>) -> Result<Json<serde_json::Value>, StatusCode> {
+    info!("Print photo requested");
     
-    match Command::new("/home/prospero/toggle_keyboard.sh")
-        .output()
-        .await
-    {
-        Ok(output) => {
-            let result = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            info!("Keyboard toggle result: {}", result);
-            (StatusCode::OK, result)
-        }
-        Err(e) => {
-            error!("Failed to toggle keyboard: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, "error".to_string())
-        }
-    }
-}
-
-pub async fn show_keyboard() -> impl IntoResponse {
-    info!("API: Show keyboard called");
+    // Here you would implement actual printing logic
+    // For now, just return success
     
-    match Command::new("/home/prospero/show_keyboard.sh")
-        .output()
-        .await
-    {
-        Ok(_) => {
-            info!("Keyboard show command executed");
-            StatusCode::OK
-        }
-        Err(e) => {
-            error!("Failed to show keyboard: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        }
-    }
-}
-
-pub async fn hide_keyboard() -> impl IntoResponse {
-    info!("API: Hide keyboard called");
-    
-    match Command::new("/home/prospero/hide_keyboard.sh")
-        .output()
-        .await
-    {
-        Ok(_) => {
-            info!("Keyboard hide command executed");
-            StatusCode::OK
-        }
-        Err(e) => {
-            error!("Failed to hide keyboard: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        }
-    }
+    Ok(Json(serde_json::json!({
+        "status": "success",
+        "message": "Photo sent to printer"
+    })))
 }
