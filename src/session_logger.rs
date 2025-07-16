@@ -74,7 +74,7 @@ impl SessionRecord {
 
 #[async_trait]
 pub trait SessionLogger {
-    async fn log_session(&self, record: SessionRecord) -> Result<()>;
+    async fn log_session(&self, record: &SessionRecord) -> Result<()>;
     async fn get_session_count(&self) -> Result<u64>;
     fn logger_type(&self) -> &'static str;
 }
@@ -126,7 +126,7 @@ impl CsvLogger {
 
 #[async_trait]
 impl SessionLogger for CsvLogger {
-    async fn log_session(&self, record: SessionRecord) -> Result<()> {
+    async fn log_session(&self, record: &SessionRecord) -> Result<()> {
         info!("Logging session to CSV: {}", record.session_id);
         
         let mut file = OpenOptions::new()
@@ -179,7 +179,7 @@ impl SqliteLogger {
 
 #[async_trait]
 impl SessionLogger for SqliteLogger {
-    async fn log_session(&self, record: SessionRecord) -> Result<()> {
+    async fn log_session(&self, record: &SessionRecord) -> Result<()> {
         // TODO: Implement SQLite logging
         info!("SQLite logging not yet implemented, session: {}", record.session_id);
         Ok(())

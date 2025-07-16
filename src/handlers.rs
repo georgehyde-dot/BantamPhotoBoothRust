@@ -1,4 +1,4 @@
-use crate::{session::PhotoSession, AppState, Assets};
+use crate::{printer::PrintJob, session::PhotoSession, AppState, Assets};
 use axum::{
     extract::State,
     http::StatusCode,
@@ -17,7 +17,6 @@ pub async fn serve_html(filename: &str) -> impl IntoResponse {
 
 // For debugging routes/ embedded files
 pub async fn list_embedded_files() -> impl IntoResponse {
-    
     let mut files = Vec::new();
     for file_path in Assets::iter() {
         files.push(file_path.to_string());
@@ -101,25 +100,32 @@ pub async fn submit_names(State(state): State<Arc<AppState>>, Json(payload): Jso
     }
 }
 
-/// This handler takes a photo and returns a URL to it.
-pub async fn start_countdown(State(state): State<Arc<AppState>>) -> Result<Json<serde_json::Value>, StatusCode> {
+/// This handler takes a photo and stores the path in the session
+pub async fn start_countdown(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     info!("API: Start photo countdown received.");
     
     match state.active_camera.take_photo_to_file().await {
         Ok(photo_path) => {
             info!("Photo captured successfully to: {}", photo_path);
             
-            // Update session with photo path
+            // Store the photo path in the current session
             let mut session_guard = state.current_session.lock().unwrap();
             if let Some(session) = session_guard.as_mut() {
                 session.photo_path = Some(photo_path.clone());
+                info!("Photo path stored in session: {}", photo_path);
+            } else {
+                error!("No active session to store photo path");
+                return (StatusCode::CONFLICT, Json(serde_json::json!({
+                    "status": "error",
+                    "message": "No active session"
+                }))).into_response();
             }
             drop(session_guard);
             
-            Ok(Json(serde_json::json!({
+            (StatusCode::OK, Json(serde_json::json!({
                 "status": "success",
                 "photo_path": photo_path
-            })))
+            }))).into_response()
         }
         Err(e) => {
             error!("Failed to take photo: {}", e);
@@ -131,63 +137,47 @@ pub async fn start_countdown(State(state): State<Arc<AppState>>) -> Result<Json<
                 _ => "Failed to take photo, please try again"
             };
             
-            Ok(Json(serde_json::json!({
+            (StatusCode::OK, Json(serde_json::json!({
                 "status": "error",
                 "message": error_message
-            })))
+            }))).into_response()
         }
     }
 }
 
-pub async fn retake_photo(State(state): State<Arc<AppState>>) -> Result<Json<serde_json::Value>, StatusCode> {
-    info!("Retake photo requested.");
+pub async fn retake_photo(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    info!("Retaking photo.");
     
-    // Check if retakes are allowed
-    let mut session_guard = state.current_session.lock().unwrap();
-    if let Some(session) = session_guard.as_mut() {
-        if !session.can_retake() {
-            drop(session_guard);
-            return Ok(Json(serde_json::json!({
-                "status": "error",
-                "message": "No retakes remaining. Please continue with your current photo.",
-                "redirect": "/entry/email"
-            })));
+    // Increment retake counter
+    {
+        let mut session_guard = state.current_session.lock().unwrap();
+        if let Some(session) = session_guard.as_mut() {
+            session.use_retake();
+            info!("Retake used. Retakes used: {}/{}", session.retakes_used, session.max_retakes);
         }
-        
-        // Use up a retake
-        session.use_retake();
-        info!("Retake used. Remaining retakes: {}", session.max_retakes - session.retakes_used);
-    } else {
-        drop(session_guard);
-        error!("Retake attempted with no active session.");
-        return Err(StatusCode::CONFLICT);
-    }
-    drop(session_guard);
+    } // Drop the lock here
     
-    // Return success - frontend will redirect to countdown
-    Ok(Json(serde_json::json!({
-        "status": "success",
-        "message": "Retake allowed",
-        "redirect": "/camera/countdown"
-    })))
+    // Call start_countdown and return its response
+    start_countdown(State(state)).await
 }
 
-// New endpoint to get session status
 pub async fn get_session_status(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
     let session_guard = state.current_session.lock().unwrap();
+    
     if let Some(session) = session_guard.as_ref() {
         Json(serde_json::json!({
             "has_session": true,
+            "session_id": session.session_id,
+            "has_photo": session.photo_path.is_some(),
             "can_retake": session.can_retake(),
             "retakes_used": session.retakes_used,
-            "max_retakes": session.max_retakes
+            "max_retakes": session.max_retakes,
+            "is_complete": session.is_complete(),
+            "email": session.email
         }))
     } else {
         Json(serde_json::json!({
-            "has_session": false,
-            "can_retake": false,
-            "retakes_used": 0,
-            "max_retakes": 0
+            "has_session": false
         }))
     }
 }
@@ -198,31 +188,159 @@ pub struct EmailPayload {
 }
 
 pub async fn submit_email(
-    State(_state): State<Arc<AppState>>,
-    Json(payload): Json<serde_json::Value>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
-    info!("Email submitted: {:?}", payload);
+    State(state): State<Arc<AppState>>,
+    Json(payload): Json<EmailPayload>,
+) -> impl IntoResponse {
+    info!("Email submitted: {}", payload.email);
     
-    // Here you would typically:
-    // 1. Save the email to your session
-    // 2. Send the photo via email
-    // 3. Clean up and prepare for next session
+    // Validate email format
+    if payload.email.trim().is_empty() {
+        return (StatusCode::BAD_REQUEST, Json(serde_json::json!({
+            "status": "error",
+            "message": "Email cannot be empty"
+        }))).into_response();
+    }
     
-    Ok(Json(serde_json::json!({
-        "status": "success",
-        "message": "Photo will be sent to your email!"
-    })))
+    let session_record = {
+        let mut session_guard = state.current_session.lock().unwrap();
+        if let Some(session) = session_guard.as_mut() {
+            session.email = Some(payload.email.clone());
+            info!("Email stored in session: {}", payload.email);
+            
+            // Check if session is complete and get the record
+            if session.is_complete() {
+                info!("Session is complete, creating session record");
+                Some(session.to_session_record())
+            } else {
+                info!("Session is not complete yet");
+                None
+            }
+        } else {
+            error!("No active session found");
+            None
+        }
+    }; // Drop the lock here
+    
+    match session_record {
+        Some(record) => {
+            info!("Session Record created: {:?}", record);
+            
+            // Log the completed session
+            match state.session_logger.log_session(&record).await {
+                Ok(_) => {
+                    info!("Session logged successfully: {}", record.session_id);
+                }
+                Err(e) => {
+                    error!("Failed to log session: {}", e);
+                    // Don't fail the request if logging fails, but log the error
+                }
+            }
+            
+            // Clear the session after logging
+            {
+                let mut session_guard = state.current_session.lock().unwrap();
+                *session_guard = None;
+                info!("Session cleared after completion");
+            }
+            
+            (StatusCode::OK, Json(serde_json::json!({
+                "status": "success",
+                "message": "Photo session completed! Check your email.",
+                "redirect": "/start"
+            }))).into_response()
+        }
+        None => {
+            // Check what's missing from the session
+            let session_guard = state.current_session.lock().unwrap();
+            if let Some(session) = session_guard.as_ref() {
+                let missing_fields = vec![
+                    if session.user_names.is_none() { Some("names") } else { None },
+                    if session.photo_path.is_none() { Some("photo") } else { None },
+                    if session.email.is_none() { Some("email") } else { None },
+                ].into_iter().flatten().collect::<Vec<_>>();
+                
+                error!("Session is incomplete. Missing: {:?}", missing_fields);
+                (StatusCode::BAD_REQUEST, Json(serde_json::json!({
+                    "status": "error",
+                    "message": format!("Session is incomplete. Missing: {}", missing_fields.join(", "))
+                }))).into_response()
+            } else {
+                error!("No active session found");
+                (StatusCode::BAD_REQUEST, Json(serde_json::json!({
+                    "status": "error",
+                    "message": "No active session found"
+                }))).into_response()
+            }
+        }
+    }
 }
 
-// Printer handler (placeholder implementation)
-pub async fn print_photo(State(_state): State<Arc<AppState>>) -> Result<Json<serde_json::Value>, StatusCode> {
-    info!("Print photo requested");
+pub async fn print_photo(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    info!("Print photo request received");
     
-    // Here you would implement actual printing logic
-    // For now, just return success
+    let session_info = {
+        let session_guard = state.current_session.lock().unwrap();
+        if let Some(session) = session_guard.as_ref() {
+            Some((
+                session.photo_path.clone(),
+                session.user_names.clone().unwrap_or_default(),
+                session.session_id.clone()
+            ))
+        } else {
+            None
+        }
+    }; // Drop the lock here
     
-    Ok(Json(serde_json::json!({
-        "status": "success",
-        "message": "Photo sent to printer"
-    })))
+    match session_info {
+        Some((Some(photo_path), names, session_id)) => {
+
+            let print_job = crate::printer::PrintJob {
+                file_path: photo_path,
+                copies: 1,
+                paper_size: crate::printer::PaperSize::Photo4x6,
+                quality: crate::printer::PrintQuality::Normal,
+            };
+            
+            match state.active_printer.print_photo(print_job).await {
+                Ok(job_id) => {
+                    info!("Print job submitted successfully: {}", job_id);
+                    
+                    // Store print job ID in session
+                    {
+                        let mut session_guard = state.current_session.lock().unwrap();
+                        if let Some(session) = session_guard.as_mut() {
+                            session.print_job_id = Some(job_id.clone());
+                        }
+                    }
+                    
+                    (StatusCode::OK, Json(serde_json::json!({
+                        "status": "success",
+                        "message": "Photo sent to printer!",
+                        "job_id": job_id
+                    }))).into_response()
+                }
+                Err(e) => {
+                    error!("Failed to print photo: {}", e);
+                    (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({
+                        "status": "error",
+                        "message": format!("Failed to print: {}", e)
+                    }))).into_response()
+                }
+            }
+        }
+        Some((None, _, _)) => {
+            error!("No photo available to print");
+            (StatusCode::NOT_FOUND, Json(serde_json::json!({
+                "status": "error",
+                "message": "No photo available to print"
+            }))).into_response()
+        }
+        None => {
+            error!("No active session");
+            (StatusCode::NOT_FOUND, Json(serde_json::json!({
+                "status": "error",
+                "message": "No active session"
+            }))).into_response()
+        }
+    }
 }

@@ -1,403 +1,528 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Enter Email</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-        }
-        
-        .container {
-            padding: 20px;
-            max-width: 600px;
-            margin: 0 auto;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            box-sizing: border-box;
-        }
-        
-        .header {
-            flex-shrink: 0;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        .email-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-        
-        /* When keyboard is open, adjust the container */
-        .container.keyboard-open {
-            height: calc(100vh - 350px); /* Account for keyboard height */
-        }
-        
-        .email-input {
-            width: 100%;
-            padding: 20px;
-            font-size: 24px;
-            border: 3px solid #ddd;
-            border-radius: 10px;
-            text-align: center;
-            background: white;
-            box-sizing: border-box;
-            cursor: pointer;
-            margin: 20px 0;
-        }
-        
-        .email-input.active {
-            border-color: #4CAF50;
-            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
-        }
-        
-        .buttons-section {
-            flex-shrink: 0;
-            margin-top: 20px;
-        }
-        
-        .submit-btn {
-            width: 100%;
-            padding: 20px;
-            font-size: 20px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            margin-bottom: 15px;
-        }
-        
-        .submit-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        
-        .skip-btn {
-            width: 100%;
-            padding: 15px;
-            font-size: 18px;
-            background: #666;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-        }
-        
-        /* Custom Keyboard Styles */
-        .custom-keyboard {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #f5f5f5;
-            border-top: 2px solid #ddd;
-            padding: 15px;
-            z-index: 1000;
-            display: none;
-            height: 320px;
-            box-sizing: border-box;
-        }
-        
-        .keyboard-row {
-            display: flex;
-            justify-content: center;
-            margin: 5px 0;
-            gap: 5px;
-        }
-        
-        .key {
-            background: white;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            padding: 15px;
-            font-size: 18px;
-            font-weight: bold;
-            min-width: 45px;
-            height: 60px;
-            cursor: pointer;
-            user-select: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.1s ease;
-        }
-        
-        .key:active {
-            background: #e0e0e0;
-            transform: scale(0.95);
-        }
-        
-        .key.special {
-            background: #e8e8e8;
-            color: #666;
-        }
-        
-        .key.important {
-            background: #4CAF50;
-            color: white;
-            border-color: #45a049;
-        }
-        
-        .key.wide {
-            flex: 2;
-            min-width: 100px;
-        }
-        
-        .validation-message {
-            color: #ff4444;
-            font-size: 16px;
-            margin-top: 10px;
-            text-align: center;
-        }
-        
-        .success-message {
-            color: #4CAF50;
-            font-size: 18px;
-            margin-top: 20px;
-            text-align: center;
-            display: none;
-        }
-        
-        @media (max-width: 480px) {
-            .key {
-                min-width: 35px;
-                height: 50px;
-                padding: 10px;
-                font-size: 16px;
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0"
+        />
+        <title>Enter Email</title>
+        <link rel="stylesheet" href="/static/css/style.css" />
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                overflow-x: hidden;
             }
-            
-            .custom-keyboard {
-                height: 280px;
+
+            .container {
+                padding: 20px;
+                max-width: 600px;
+                margin: 0 auto;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                box-sizing: border-box;
             }
-            
+
+            .header {
+                flex-shrink: 0;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .email-section {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                transition: all 0.3s ease;
+            }
+
+            /* When keyboard is open, adjust the container */
             .container.keyboard-open {
-                height: calc(100vh - 300px);
+                height: calc(100vh - 350px); /* Account for keyboard height */
             }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Get Your Photo!</h1>
-            <p>Enter your email address to receive your photo:</p>
-        </div>
-        
-        <div class="email-section">
-            <input 
-                type="text" 
-                id="emailInput"
-                class="email-input" 
-                placeholder="Tap to enter your email"
-                readonly
-                maxlength="50"
-            >
-            <div id="validationMessage" class="validation-message"></div>
-        </div>
-        
-        <div class="buttons-section">
-            <button id="submitBtn" class="submit-btn" disabled>Send Photo</button>
-            <button id="skipBtn" class="skip-btn">Skip Email</button>
-            
-            <div id="successMessage" class="success-message">
-                Photo sent! Check your email.
+
+            .email-input {
+                width: 100%;
+                padding: 20px;
+                font-size: 24px;
+                border: 3px solid #ddd;
+                border-radius: 10px;
+                text-align: center;
+                background: white;
+                box-sizing: border-box;
+                cursor: pointer;
+                margin: 20px 0;
+            }
+
+            .email-input.active {
+                border-color: #4caf50;
+                box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+            }
+
+            .buttons-section {
+                flex-shrink: 0;
+                margin-top: 20px;
+            }
+
+            .submit-btn {
+                width: 100%;
+                padding: 20px;
+                font-size: 20px;
+                background: #4caf50;
+                color: white;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                margin-bottom: 15px;
+            }
+
+            .submit-btn:disabled {
+                background: #ccc;
+                cursor: not-allowed;
+            }
+
+            .skip-btn {
+                width: 100%;
+                padding: 15px;
+                font-size: 18px;
+                background: #666;
+                color: white;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+            }
+
+            /* Custom Keyboard Styles */
+            .custom-keyboard {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: #f5f5f5;
+                border-top: 2px solid #ddd;
+                padding: 15px;
+                z-index: 1000;
+                display: none;
+                height: 320px;
+                box-sizing: border-box;
+            }
+
+            .keyboard-row {
+                display: flex;
+                justify-content: center;
+                margin: 5px 0;
+                gap: 5px;
+            }
+
+            .key {
+                background: white;
+                border: 2px solid #ccc;
+                border-radius: 8px;
+                padding: 15px;
+                font-size: 18px;
+                font-weight: bold;
+                min-width: 45px;
+                height: 60px;
+                cursor: pointer;
+                user-select: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.1s ease;
+            }
+
+            .key:active {
+                background: #e0e0e0;
+                transform: scale(0.95);
+            }
+
+            .key.special {
+                background: #e8e8e8;
+                color: #666;
+            }
+
+            .key.important {
+                background: #4caf50;
+                color: white;
+                border-color: #45a049;
+            }
+
+            .key.wide {
+                flex: 2;
+                min-width: 100px;
+            }
+
+            .validation-message {
+                color: #ff4444;
+                font-size: 16px;
+                margin-top: 10px;
+                text-align: center;
+            }
+
+            .success-message {
+                color: #4caf50;
+                font-size: 18px;
+                margin-top: 20px;
+                text-align: center;
+                display: none;
+            }
+
+            @media (max-width: 480px) {
+                .key {
+                    min-width: 35px;
+                    height: 50px;
+                    padding: 10px;
+                    font-size: 16px;
+                }
+
+                .custom-keyboard {
+                    height: 280px;
+                }
+
+                .container.keyboard-open {
+                    height: calc(100vh - 300px);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Get Your Photo!</h1>
+                <p>Enter your email address to receive your photo:</p>
+            </div>
+
+            <div class="email-section">
+                <input
+                    type="text"
+                    id="emailInput"
+                    class="email-input"
+                    placeholder="Tap to enter your email"
+                    readonly
+                    maxlength="50"
+                />
+                <div id="validationMessage" class="validation-message"></div>
+            </div>
+
+            <div class="buttons-section">
+                <button id="submitBtn" class="submit-btn" disabled>
+                    Send Photo To Email
+                </button>
+                <button id="skipBtn" class="skip-btn">Skip Email</button>
+
+                <div id="successMessage" class="success-message">
+                    Photo sent! Check your email.
+                </div>
+
+                <div id="printStatus" class="success-message">
+                    Printing your photo...
+                </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Custom Email Keyboard -->
-    <div id="customKeyboard" class="custom-keyboard">
-        <div class="keyboard-row">
-            <button type="button" class="key" data-key="q">q</button>
-            <button type="button" class="key" data-key="w">w</button>
-            <button type="button" class="key" data-key="e">e</button>
-            <button type="button" class="key" data-key="r">r</button>
-            <button type="button" class="key" data-key="t">t</button>
-            <button type="button" class="key" data-key="y">y</button>
-            <button type="button" class="key" data-key="u">u</button>
-            <button type="button" class="key" data-key="i">i</button>
-            <button type="button" class="key" data-key="o">o</button>
-            <button type="button" class="key" data-key="p">p</button>
+
+        <!-- Custom Email Keyboard -->
+        <div id="customKeyboard" class="custom-keyboard">
+            <div class="keyboard-row">
+                <button type="button" class="key" data-key="q">q</button>
+                <button type="button" class="key" data-key="w">w</button>
+                <button type="button" class="key" data-key="e">e</button>
+                <button type="button" class="key" data-key="r">r</button>
+                <button type="button" class="key" data-key="t">t</button>
+                <button type="button" class="key" data-key="y">y</button>
+                <button type="button" class="key" data-key="u">u</button>
+                <button type="button" class="key" data-key="i">i</button>
+                <button type="button" class="key" data-key="o">o</button>
+                <button type="button" class="key" data-key="p">p</button>
+            </div>
+            <div class="keyboard-row">
+                <button type="button" class="key" data-key="a">a</button>
+                <button type="button" class="key" data-key="s">s</button>
+                <button type="button" class="key" data-key="d">d</button>
+                <button type="button" class="key" data-key="f">f</button>
+                <button type="button" class="key" data-key="g">g</button>
+                <button type="button" class="key" data-key="h">h</button>
+                <button type="button" class="key" data-key="j">j</button>
+                <button type="button" class="key" data-key="k">k</button>
+                <button type="button" class="key" data-key="l">l</button>
+                <button type="button" class="key important" data-key="@">
+                    @
+                </button>
+            </div>
+            <div class="keyboard-row">
+                <button type="button" class="key" data-key="z">z</button>
+                <button type="button" class="key" data-key="x">x</button>
+                <button type="button" class="key" data-key="c">c</button>
+                <button type="button" class="key" data-key="v">v</button>
+                <button type="button" class="key" data-key="b">b</button>
+                <button type="button" class="key" data-key="n">n</button>
+                <button type="button" class="key" data-key="m">m</button>
+                <button type="button" class="key important" data-key=".">
+                    .
+                </button>
+                <button type="button" class="key special" data-key="backspace">
+                    ⌫
+                </button>
+            </div>
+            <div class="keyboard-row">
+                <button type="button" class="key" data-key="1">1</button>
+                <button type="button" class="key" data-key="2">2</button>
+                <button type="button" class="key" data-key="3">3</button>
+                <button type="button" class="key" data-key="4">4</button>
+                <button type="button" class="key" data-key="5">5</button>
+                <button type="button" class="key" data-key="6">6</button>
+                <button type="button" class="key" data-key="7">7</button>
+                <button type="button" class="key" data-key="8">8</button>
+                <button type="button" class="key" data-key="9">9</button>
+                <button type="button" class="key" data-key="0">0</button>
+            </div>
+            <div class="keyboard-row">
+                <button type="button" class="key" data-key="-">-</button>
+                <button type="button" class="key" data-key="_">_</button>
+                <button type="button" class="key special" data-key="clear">
+                    Clear
+                </button>
+                <button type="button" class="key special wide" data-key="done">
+                    Done
+                </button>
+            </div>
         </div>
-        <div class="keyboard-row">
-            <button type="button" class="key" data-key="a">a</button>
-            <button type="button" class="key" data-key="s">s</button>
-            <button type="button" class="key" data-key="d">d</button>
-            <button type="button" class="key" data-key="f">f</button>
-            <button type="button" class="key" data-key="g">g</button>
-            <button type="button" class="key" data-key="h">h</button>
-            <button type="button" class="key" data-key="j">j</button>
-            <button type="button" class="key" data-key="k">k</button>
-            <button type="button" class="key" data-key="l">l</button>
-            <button type="button" class="key important" data-key="@">@</button>
-        </div>
-        <div class="keyboard-row">
-            <button type="button" class="key" data-key="z">z</button>
-            <button type="button" class="key" data-key="x">x</button>
-            <button type="button" class="key" data-key="c">c</button>
-            <button type="button" class="key" data-key="v">v</button>
-            <button type="button" class="key" data-key="b">b</button>
-            <button type="button" class="key" data-key="n">n</button>
-            <button type="button" class="key" data-key="m">m</button>
-            <button type="button" class="key important" data-key=".">.</button>
-            <button type="button" class="key special" data-key="backspace">⌫</button>
-        </div>
-        <div class="keyboard-row">
-            <button type="button" class="key" data-key="1">1</button>
-            <button type="button" class="key" data-key="2">2</button>
-            <button type="button" class="key" data-key="3">3</button>
-            <button type="button" class="key" data-key="4">4</button>
-            <button type="button" class="key" data-key="5">5</button>
-            <button type="button" class="key" data-key="6">6</button>
-            <button type="button" class="key" data-key="7">7</button>
-            <button type="button" class="key" data-key="8">8</button>
-            <button type="button" class="key" data-key="9">9</button>
-            <button type="button" class="key" data-key="0">0</button>
-        </div>
-        <div class="keyboard-row">
-            <button type="button" class="key" data-key="-">-</button>
-            <button type="button" class="key" data-key="_">_</button>
-            <button type="button" class="key special" data-key="clear">Clear</button>
-            <button type="button" class="key special wide" data-key="done">Done</button>
-        </div>
-    </div>
-    
-    <script>
-        let activeInput = null;
-        
-        // Email validation function
-        function isValidEmail(email) {
-            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-            return emailRegex.test(email);
-        }
-        
-        // Handle input click
-        document.getElementById('emailInput').addEventListener('click', function() {
-            this.classList.add('active');
-            activeInput = this;
-            document.getElementById('customKeyboard').style.display = 'block';
-            document.querySelector('.container').classList.add('keyboard-open');
-        });
-        
-        // Handle keyboard keys
-        document.querySelectorAll('.key').forEach(key => {
-            key.addEventListener('click', function() {
-                if (!activeInput) return;
-                
-                const keyValue = this.dataset.key;
-                
-                switch(keyValue) {
-                    case 'backspace':
-                        activeInput.value = activeInput.value.slice(0, -1);
-                        break;
-                        
-                    case 'clear':
-                        activeInput.value = '';
-                        break;
-                        
-                    case 'done':
-                        closeKeyboard();
-                        break;
-                        
-                    default:
-                        // Prevent spaces in email
-                        if (keyValue !== ' ') {
-                            activeInput.value += keyValue;
+
+        <script>
+            let activeInput = null;
+
+            // Email validation function
+            function isValidEmail(email) {
+                const emailRegex =
+                    /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                return emailRegex.test(email);
+            }
+
+            // Simple print function with detailed debugging
+            function printPhoto() {
+                console.log("=== PRINT FUNCTION START ===");
+                console.log("Current URL:", window.location.href);
+                console.log("Current time:", new Date().toISOString());
+
+                // Show immediate feedback
+                const printStatus = document.getElementById("printStatus");
+                if (printStatus) {
+                    printStatus.textContent = "Attempting to print...";
+                    printStatus.style.display = "block";
+                    printStatus.style.color = "#FF9800";
+                }
+
+                console.log(
+                    "About to make fetch request to /api/printer/print_photo",
+                );
+
+                fetch("/api/printer/print_photo", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                })
+                    .then((response) => {
+                        console.log("=== FETCH RESPONSE RECEIVED ===");
+                        console.log("Response status:", response.status);
+                        console.log("Response ok:", response.ok);
+
+                        if (printStatus) {
+                            if (response.ok) {
+                                printStatus.textContent =
+                                    "Print request sent successfully!";
+                                printStatus.style.color = "#4CAF50";
+                            } else {
+                                printStatus.textContent =
+                                    "Print request failed: " + response.status;
+                                printStatus.style.color = "#ff6b6b";
+                            }
                         }
-                        break;
-                }
-                
-                validateAndUpdateSubmitButton();
-            });
-        });
-        
-        function closeKeyboard() {
-            document.getElementById('customKeyboard').style.display = 'none';
-            document.querySelector('.container').classList.remove('keyboard-open');
-            if (activeInput) {
-                activeInput.classList.remove('active');
-                activeInput = null;
+
+                        return response.text();
+                    })
+                    .then((text) => {
+                        console.log("Response body:", text);
+                    })
+                    .catch((error) => {
+                        console.log("=== FETCH ERROR ===");
+                        console.log("Error:", error);
+                        console.log("Error message:", error.message);
+
+                        if (printStatus) {
+                            printStatus.textContent =
+                                "Print request failed: " + error.message;
+                            printStatus.style.color = "#ff6b6b";
+                        }
+                    })
+                    .finally(() => {
+                        console.log("=== PRINT FUNCTION END ===");
+                    });
             }
-        }
-        
-        function validateAndUpdateSubmitButton() {
-            const email = document.getElementById('emailInput').value.trim();
-            const submitBtn = document.getElementById('submitBtn');
-            const validationMsg = document.getElementById('validationMessage');
-            
-            if (email.length === 0) {
-                submitBtn.disabled = true;
-                submitBtn.style.background = '#ccc';
-                validationMsg.textContent = '';
-            } else if (isValidEmail(email)) {
-                submitBtn.disabled = false;
-                submitBtn.style.background = '#4CAF50';
-                validationMsg.textContent = '';
-            } else {
-                submitBtn.disabled = true;
-                submitBtn.style.background = '#ccc';
-                validationMsg.textContent = 'Please enter a valid email address';
-            }
-        }
-        
-        // Handle submit
-        document.getElementById('submitBtn').addEventListener('click', async function() {
-            const email = document.getElementById('emailInput').value.trim();
-            
-            if (!isValidEmail(email)) return;
-            
-            this.disabled = true;
-            this.textContent = 'Sending...';
-            
-            try {
-                const response = await fetch('/api/session/submit_email', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email })
+
+            // Handle input click
+            document
+                .getElementById("emailInput")
+                .addEventListener("click", function () {
+                    this.classList.add("active");
+                    activeInput = this;
+                    document.getElementById("customKeyboard").style.display =
+                        "block";
+                    document
+                        .querySelector(".container")
+                        .classList.add("keyboard-open");
                 });
-                
-                if (response.ok) {
-                    document.getElementById('successMessage').style.display = 'block';
-                    setTimeout(() => {
-                        window.location.href = '/start';
-                    }, 3000);
-                } else {
-                    throw new Error('Failed to send email');
+
+            // Handle keyboard keys
+            document.querySelectorAll(".key").forEach((key) => {
+                key.addEventListener("click", function () {
+                    if (!activeInput) return;
+
+                    const keyValue = this.dataset.key;
+
+                    switch (keyValue) {
+                        case "backspace":
+                            activeInput.value = activeInput.value.slice(0, -1);
+                            break;
+
+                        case "clear":
+                            activeInput.value = "";
+                            break;
+
+                        case "done":
+                            closeKeyboard();
+                            break;
+
+                        default:
+                            // Prevent spaces in email
+                            if (keyValue !== " ") {
+                                activeInput.value += keyValue;
+                            }
+                            break;
+                    }
+
+                    validateAndUpdateSubmitButton();
+                });
+            });
+
+            function closeKeyboard() {
+                document.getElementById("customKeyboard").style.display =
+                    "none";
+                document
+                    .querySelector(".container")
+                    .classList.remove("keyboard-open");
+                if (activeInput) {
+                    activeInput.classList.remove("active");
+                    activeInput = null;
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                this.disabled = false;
-                this.textContent = 'Send Photo';
-                document.getElementById('validationMessage').textContent = 'Failed to send email. Please try again.';
             }
-        });
-        
-        // Handle skip button
-        document.getElementById('skipBtn').addEventListener('click', function() {
-            this.textContent = 'Skipping...';
-            setTimeout(() => {
-                window.location.href = '/start';
-            }, 500);
-        });
-        
-        // Close keyboard when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.custom-keyboard') && !e.target.closest('.email-input')) {
-                closeKeyboard();
+
+            function validateAndUpdateSubmitButton() {
+                const email = document
+                    .getElementById("emailInput")
+                    .value.trim();
+                const submitBtn = document.getElementById("submitBtn");
+                const validationMsg =
+                    document.getElementById("validationMessage");
+
+                if (email.length === 0) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.background = "#ccc";
+                    validationMsg.textContent = "";
+                } else if (isValidEmail(email)) {
+                    submitBtn.disabled = false;
+                    submitBtn.style.background = "#4CAF50";
+                    validationMsg.textContent = "";
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.style.background = "#ccc";
+                    validationMsg.textContent =
+                        "Please enter a valid email address";
+                }
             }
-        });
-        
-        // Initialize
-        validateAndUpdateSubmitButton();
-    </script>
-</body>
+
+            // Handle submit
+            document
+                .getElementById("submitBtn")
+                .addEventListener("click", async function () {
+                    const email = document
+                        .getElementById("emailInput")
+                        .value.trim();
+
+                    if (!isValidEmail(email)) return;
+
+                    this.disabled = true;
+                    this.textContent = "Sending...";
+
+                    try {
+                        const response = await fetch(
+                            "/api/session/submit_email",
+                            {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ email: email }),
+                            },
+                        );
+
+                        if (response.ok) {
+                            document.getElementById(
+                                "successMessage",
+                            ).style.display = "block";
+                            document.getElementById(
+                                "successMessage",
+                            ).textContent = "Photo sent! Check your email.";
+
+                            setTimeout(() => {
+                                window.location.href = "/start";
+                            }, 3000);
+                        } else {
+                            throw new Error("Failed to send email");
+                        }
+                    } catch (error) {
+                        console.error("Error:", error);
+                        this.disabled = false;
+                        this.textContent = "Send Photo";
+                        document.getElementById(
+                            "validationMessage",
+                        ).textContent =
+                            "Failed to send email. Please try again.";
+                    }
+                });
+
+            // Handle skip button
+            document
+                .getElementById("skipBtn")
+                .addEventListener("click", function () {
+                    this.disabled = true;
+                    this.textContent = "Skipping...";
+
+                    setTimeout(() => {
+                        window.location.href = "/start";
+                    }, 500);
+                });
+
+            // Close keyboard when clicking outside
+            document.addEventListener("click", function (e) {
+                if (
+                    !e.target.closest(".custom-keyboard") &&
+                    !e.target.closest(".email-input")
+                ) {
+                    closeKeyboard();
+                }
+            });
+
+            // Initialize
+            validateAndUpdateSubmitButton();
+
+            // Call print function immediately AND add detailed logging
+            console.log("=== EMAIL ENTRY PAGE SCRIPT LOADED ===");
+            console.log("Document ready state:", document.readyState);
+            console.log("Page URL:", window.location.href);
+            console.log("Current time:", new Date().toISOString());
+
+            // Call print function immediately
+            console.log("=== CALLING PRINT FUNCTION NOW ===");
+            printPhoto();
+        </script>
+    </body>
 </html>

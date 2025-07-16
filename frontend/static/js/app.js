@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Navigate immediately
             setTimeout(() => {
-                window.location.href = '/select/weapon';
+                window.location.href = '/entry/names';
             }, 100);
         });
     }

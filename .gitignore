@@ -120,3 +120,6 @@ doc/
 
 # Test artifacts
 tests/tmp/
+
+#
+*.txt

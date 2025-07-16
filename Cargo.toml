@@ -1,5 +1,5 @@
 [package]
-name = "rust_photobooth"
+name = "rust_booth"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 # The core async runtime for Rust
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1.0", features = ["full"] }
 
 # The web framework
 axum = "0.7"
@@ -35,7 +35,7 @@ image = "0.25"
 # For defining async functions in traits
 async-trait = "0.1"
 
-rust-embed={"version" = "8.7.2", "features" = ["include-exclude", "compression"]}
+rust-embed={"version" = "8.0", "features" = ["include-exclude", "compression"]}
 axum-embed = "0.1.0"
 # libcamera = "0.4.0"
 
@@ -44,3 +44,8 @@ tokio-rustls = "0.25"
 rustls = "0.22"
 rustls-pemfile = "2.0"
 chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4"] }
+csv = "1.3"
+printers = "2.2.0"
+
+[dev-dependencies]

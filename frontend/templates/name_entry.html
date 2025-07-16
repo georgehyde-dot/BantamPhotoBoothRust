@@ -187,7 +187,7 @@
         </div>
         
         <div class="submit-section">
-            <button id="submitBtn" class="submit-btn" disabled>Continue to Photo</button>
+            <button id="submitBtn" class="submit-btn" disabled>Continue to Selections</button>
         </div>
     </div>
     
@@ -361,14 +361,15 @@
                 });
                 
                 if (response.ok) {
-                    window.location.href = '/camera/countdown';
+                    // Changed from /camera/countdown to /select/weapon
+                    window.location.href = '/select/weapon';
                 } else {
                     throw new Error('Failed to submit names');
                 }
             } catch (error) {
                 console.error('Error:', error);
                 this.disabled = false;
-                this.textContent = 'Continue to Photo';
+                this.textContent = 'Continue to Selections';
                 alert('Error submitting names. Please try again.');
             }
         });

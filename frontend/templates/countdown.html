@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <title>Photo Countdown</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <style>
@@ -16,6 +16,8 @@
         .countdown-container {
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
             height: 100vh;
             text-align: center;
             padding: 10px;
@@ -24,39 +26,26 @@
         
         .countdown-message {
             font-size: 24px;
-            margin: 10px 0;
+            margin-bottom: 15px;
             color: #333;
-            flex-shrink: 0;
         }
         
         .camera-preview {
-            flex: 1;
-            max-width: 80vw;
-            max-height: 60vh;
-            aspect-ratio: 4/3; /* Force a more square aspect ratio */
+            width: 90%;
+            max-width: 800px;
+            height: 600px;
             background: #000;
             border: 3px solid #333;
             border-radius: 10px;
-            margin: 10px auto;
+            margin-bottom: 15px;
             position: relative;
             overflow: hidden;
-            min-height: 300px;
-            width: auto; /* Let aspect-ratio control the width */
-        }
-        
-        /* Alternative: Force square aspect ratio */
-        @media (max-width: 768px) {
-            .camera-preview {
-                aspect-ratio: 1/1; /* Square on mobile */
-                max-width: 70vw;
-                max-height: 70vw;
-            }
         }
         
         .preview-video {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* This will crop to fit the container */
+            object-fit: cover;
         }
         
         .preview-placeholder {
@@ -80,7 +69,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
         }
         
         .start-countdown-btn {
@@ -91,9 +79,7 @@
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            margin: 10px auto;
-            flex-shrink: 0;
-            max-width: 300px;
+            margin-top: 10px;
         }
         
         .start-countdown-btn:hover {
@@ -138,6 +124,83 @@
             border-radius: 5px;
             max-width: 300px;
         }
+        
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            .countdown-container {
+                padding: 5px;
+            }
+            
+            .camera-preview {
+                width: 95%;
+                max-width: 480px;
+                height: 360px;
+                margin-bottom: 10px;
+            }
+            
+            .countdown-display {
+                font-size: 60px;
+                min-height: 80px;
+                margin: 5px 0;
+            }
+            
+            .countdown-message {
+                font-size: 20px;
+                margin-bottom: 10px;
+            }
+            
+            .start-countdown-btn {
+                margin-top: 5px;
+                padding: 12px 24px;
+                font-size: 18px;
+            }
+        }
+        
+        /* Ensure photo doesn't exceed safe area */
+        @media (max-height: 600px) {
+            .camera-preview {
+                width: 85%;
+                max-width: 600px;
+                height: 300px;
+                margin-bottom: 10px;
+            }
+            
+            .countdown-display {
+                font-size: 50px;
+                min-height: 50px;
+                margin: 5px 0;
+            }
+            
+            .countdown-message {
+                font-size: 18px;
+                margin-bottom: 8px;
+            }
+            
+            .start-countdown-btn {
+                margin-top: 5px;
+                padding: 10px 20px;
+                font-size: 16px;
+            }
+        }
+        
+        /* Very short screens */
+        @media (max-height: 500px) {
+            .camera-preview {
+                height: 200px;
+                margin-bottom: 5px;
+            }
+            
+            .countdown-display {
+                font-size: 40px;
+                min-height: 40px;
+                margin: 2px 0;
+            }
+            
+            .countdown-message {
+                font-size: 16px;
+                margin-bottom: 5px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -154,9 +217,10 @@
             <div id="flashOverlay" class="flash-overlay"></div>
         </div>
         
-        <div id="countdownDisplay" class="countdown-display"></div>
-        
-        <button id="startCountdownBtn" class="start-countdown-btn">📸 Start Countdown</button>
+        <div class="countdown-controls">
+            <div id="countdownDisplay" class="countdown-display"></div>
+            <button id="startCountdownBtn" class="start-countdown-btn">📸 Start Countdown</button>
+        </div>
         
         <div id="errorMessage" class="error-message" style="display: none;"></div>
         
@@ -274,7 +338,7 @@
                     countdownDisplay.textContent = count;
                     updateDebug('Countdown: ' + count);
                 } else {
-                    countdownDisplay.textContent = 'SMILE!';
+                    countdownDisplay.textContent = 'SCOWL!';
                     updateDebug('Taking photo...');
                     clearInterval(countdownInterval);
                     
@@ -344,7 +408,7 @@
             const countdownDisplay = document.getElementById('countdownDisplay');
             
             startBtn.disabled = false;
-            startBtn.textContent = '📸 Start Countdown';
+            startBtn.textContent = 'Start Countdown';
             countdownDisplay.textContent = '';
             
             if (countdownInterval) {
